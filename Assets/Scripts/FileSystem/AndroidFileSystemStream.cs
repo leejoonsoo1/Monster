@@ -90,7 +90,7 @@ namespace UnityGameFramework.Runtime
             mFileStreamRawObject = mFileStream.GetRawObject();
         }
 
-        protected internal override long Position
+        protected override long Position
         {
             get
             {
@@ -102,7 +102,7 @@ namespace UnityGameFramework.Runtime
             }
         }
 
-        protected internal override long Length
+        protected override long Length
         {
             get
             {
@@ -110,12 +110,12 @@ namespace UnityGameFramework.Runtime
             }
         }
 
-        protected internal override void SetLength(long length)
+        protected override void SetLength(long length)
         {
             throw new GameFrameworkException("SetLength is not supported in AndroidFileSystemStream.");
         }
 
-        protected internal override void Seek(long offset, SeekOrigin origin)
+        protected override void Seek(long offset, SeekOrigin origin)
         {
             if (origin == SeekOrigin.End)
             {
@@ -140,12 +140,12 @@ namespace UnityGameFramework.Runtime
             }
         }
 
-        protected internal override int ReadByte()
+        protected override int ReadByte()
         {
             return InternalRead();
         }
 
-        protected  internal override int Read(byte[] buffer, int startIndex, int length)
+        protected override int Read(byte[] buffer, int startIndex, int length)
         {
             byte[] result = null;
             int bytesRead = InternalRead(length, out result);
@@ -153,22 +153,22 @@ namespace UnityGameFramework.Runtime
             return bytesRead;
         }
 
-        protected internal override void WriteByte(byte value)
+        protected override void WriteByte(byte value)
         {
             throw new GameFrameworkException("WriteByte is not supported in AndroidFileSystemStream.");
         }
 
-        protected internal override void Write(byte[] buffer, int startIndex, int length)
+        protected override void Write(byte[] buffer, int startIndex, int length)
         {
             throw new GameFrameworkException("Write is not supported in AndroidFileSystemStream.");
         }
 
-        protected internal override void Flush()
+        protected override void Flush()
         {
             throw new GameFrameworkException("Flush is not supported in AndroidFileSystemStream.");
         }
 
-        protected internal override void Close()
+        protected override void Close()
         {
             InternalClose();
             mFileStream.Dispose();
