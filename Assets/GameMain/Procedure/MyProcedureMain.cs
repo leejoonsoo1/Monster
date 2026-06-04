@@ -4,19 +4,18 @@ using UnityEngine;
 using UnityGameFramework.Runtime;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
-namespace Pokemon
+namespace Monster
 {
     public class MyProcedureMain : MyProcedureBase
     {
-        private Player mPlayer = null;
+        private RPGGame mGame = null;
 
         // OnInit is called when the procedure is initialized.
         protected override void OnInit(ProcedureOwner procedureOwner)
         {
             base.OnInit(procedureOwner);
 
-            mPlayer = new Player();
-            mPlayer.Initialize();
+            //mPlayer.Initialize();
         }
 
         // OnEter is called when the procedure is entered. 
@@ -25,6 +24,15 @@ namespace Pokemon
             base.OnEnter(procedureOwner);
 
             Log.Info("ProcedureMain: Enter");
+
+            mGame = new RPGGame();
+
+            if (mGame == null)
+            {
+                Log.Info("mGame is null");
+            }
+
+            mGame.Initialize();
         }
 
         // Onupdate is called every frame when the procedure is running.
@@ -32,9 +40,9 @@ namespace Pokemon
         {
             base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
 
-            if (mPlayer != null)
+            if (mGame != null)
             {
-                mPlayer.Update();
+                mGame.Update(elapseSeconds, realElapseSeconds);
             }
         }
 
@@ -42,7 +50,7 @@ namespace Pokemon
         protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
         {
             //mPlayer?.Shutdown();
-            mPlayer = null;
+            mGame = null;
 
             base.OnLeave(procedureOwner, isShutdown);
         }
@@ -52,5 +60,7 @@ namespace Pokemon
         {
             base.OnDestroy(procedureOwner);
         }
+
+        public override bool UseNativeDialog => false;
     }
 }
