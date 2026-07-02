@@ -2,6 +2,7 @@
 
 namespace UnityGameFramework.Runtime
 {
+    //EntityLogic의 역할은 UnityGameFramework에서 모든 엔티티(Player, NPC, 몬스터, 아이템 등)가 공통적으로 사용하는 베이스 클래스
     public abstract class EntityLogic : MonoBehaviour
     {
         private bool mAvailable = false;

@@ -1,11 +1,13 @@
 using GameFramework.Procedure;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering.VirtualTexturing;
 using UnityGameFramework.Runtime;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 namespace Monster
 {
+    // MyProcedureMain의 역할은 게임의 메인 플레이 상태를 관리하는 프로시저(Procedure)
     public class MyProcedureMain : MyProcedureBase
     {
         private RPGGame mGame = null;

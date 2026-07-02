@@ -1,12 +1,3 @@
-//------------------------------------------------------------
-// Game Framework - MIT License
-// Copyright © 2013–2021 Jiang Yin (EllanJiang)
-// Modified © 2025 얌얌코딩
-// Homepage: https://www.yamyamcoding.com/
-// Feedback: mailto:eazuooz@gmail.com
-//------------------------------------------------------------
-
-
 using GameFramework;
 using GameFramework.Entity;
 using GameFramework.ObjectPool;
@@ -17,6 +8,7 @@ using UnityEngine;
 
 namespace UnityGameFramework.Runtime
 {
+    // EntityComponent는 UGF에서 모든 엔티티를 생성, 삭제, 조회, 부착, 분리하는 중앙 관리자(Manager)
     [DisallowMultipleComponent]
     [AddComponentMenu("Game Framework/Entity")]
     public sealed partial class EntityComponent : GameFrameworkComponent
