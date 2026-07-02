@@ -73,7 +73,7 @@ namespace Monster
             }
 
             // 이동 중인지 여부
-            bool isMove = (x > 0f || x < 0f || y < 0f || y > 0f);
+            bool isMove = (x != 0f || y != 0f);
             if (animator != null)
             {
                 // 이동 중일 때만 마지막 바라보는 방향 계산
