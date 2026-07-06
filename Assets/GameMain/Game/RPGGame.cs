@@ -2,6 +2,9 @@ using GameFramework.Event;
 using UnityEngine;
 using UnityGameFramework.Runtime;
 
+// 배틀 관련 규칙, 몬스터 체력 관련 규칙,
+// 1. 이동해서 만나는 것 까지만 생각.
+// 2. 
 namespace Monster
 {
     public class RPGGame : GameBase

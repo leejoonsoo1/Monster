@@ -11,7 +11,7 @@ namespace UnityGameFramework.Runtime
         private Transform mCachedTransform = null;
         private int mOriginalLayer = 0;
         private Transform mOriginalTransform = null;
-
+        
         public Entity Entity
         {
             get
