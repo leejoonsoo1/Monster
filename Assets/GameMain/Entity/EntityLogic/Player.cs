@@ -6,10 +6,11 @@ using UnityGameFramework.Runtime;
 
 namespace Monster
 {
-    [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(Rigidbody2D))]
+    [RequireComponent(typeof(BoxCollider2D))]
     public class Player : TargetTableObject
     {
-        private CharacterController controller;
+        private Rigidbody2D rigidbody2D;
         private PlayerData playerData;
         private Animator animator;
 
@@ -28,24 +29,32 @@ namespace Monster
         {
             base.OnShow(userData);
 
-            playerData = userData as PlayerData;
-            animator = GetComponent<Animator>();
+            playerData  = userData as PlayerData;
+            animator    = GetComponent<Animator>();
 
             if (playerData == null)
             {
                 Log.Warning("PlayerData Invalid");
+
                 return;
             }
 
-            controller = GetComponent<CharacterController>();
+            rigidbody2D = GetComponent<Rigidbody2D>();
 
+            if (rigidbody2D == null)
+            {
+                Log.Warning("Rigidbody2D가 없습니다.");
+
+                return;
+            }
+
+            // 플레이어의 초기 위치를 설정합니다.
             transform.position = playerData.Position;
         }
 
        public void Update()
         {
-            // CharacterController가 없으면 이동 처리 중단
-            if (controller == null)
+            if (rigidbody2D == null)
             {
                 return;
             }
@@ -87,11 +96,9 @@ namespace Monster
                 animator.SetBool("IsMove", isMove);
             }
 
-            // 이동 방향 생성
-            Vector3 move = new Vector3(x, y, 0f).normalized;
+            Vector2 move = new Vector2(x, y).normalized;
 
-            // CharacterController를 이용한 이동 처리
-            controller.Move(move * speed * Time.deltaTime);
+            rigidbody2D.MovePosition(rigidbody2D.position + move * speed * Time.deltaTime);
 
             /*
             //Debug.Log("UPDATE RUN");

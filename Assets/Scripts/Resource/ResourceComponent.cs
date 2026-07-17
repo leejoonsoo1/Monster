@@ -1,9 +1,3 @@
-//------------------------------------------------------------
-// Game Framework - MIT License
-// Copyright © 2013–2021 Jiang Yin (EllanJiang)
-// Modified © 2025 얌얌코딩
-//------------------------------------------------------------
-
 using GameFramework.Resource;
 using System;
 using UnityEngine;
