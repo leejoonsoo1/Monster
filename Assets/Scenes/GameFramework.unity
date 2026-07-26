@@ -335,6 +335,7 @@ GameObject:
   - component: {fileID: 675867010}
   - component: {fileID: 675867009}
   - component: {fileID: 675867012}
+  - component: {fileID: 675867013}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -384,7 +385,7 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
+  orthographic: 1
   orthographic size: 5
   m_Depth: -1
   m_CullingMask:
@@ -460,6 +461,21 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &675867013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 675867008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98e199066b03b5446968284a8daef5b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Monster.CameraFollow
+  target: {fileID: 0}
+  offset: {x: 0, y: 0, z: -10}
+  followSpeed: 10
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -44,21 +44,37 @@ namespace Monster
                 new PlayerData(id, 1, position));
         }
 
-        protected override void OnShowEntitySuccess(object sender, GameEventArgs e)
+        protected override void OnShowEntitySuccess(object sender, GameEventArgs gEvent)
         {
-            base.OnShowEntitySuccess(sender, e);
+            base.OnShowEntitySuccess(sender, gEvent);
 
-            var ne = (ShowEntitySuccessEventArgs)e;
+            ShowEntitySuccessEventArgs gPlayer = (ShowEntitySuccessEventArgs)gEvent;
 
-            mPlayer = ne.Entity.GetComponent<Player>();
+            mPlayer = gPlayer.Entity.GetComponent<Player>();
 
             if (mPlayer == null)
             {
                 Log.Warning("Player Component not found");
+
                 return;
             }
 
             Log.Info("Player Spawn Success");
+
+            // Main Camera에서 CameraFollow 컴포넌트를 가져온다.
+            CameraFollow cameraFollow = Camera.main.GetComponent<CameraFollow>();
+
+            if (cameraFollow == null)
+            {
+                Log.Warning("CameraFollow Component not found");
+
+                return;
+            }
+
+            // 카메라가 생성된 Player를 따라가도록 설정
+            cameraFollow.target = mPlayer.transform;
+
+            Log.Info("Camera Target Setting Success");
         }
 
         protected override void OnShowEntityFailure(object sender, GameEventArgs e)
