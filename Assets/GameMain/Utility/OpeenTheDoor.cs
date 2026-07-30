@@ -9,14 +9,14 @@ namespace Monster
         [SerializeField] private int waitTime = 1;
 
         // 문 앞에 플레이어가 있는지 판단하는 변수입니다.
-        private bool isPlayerInRange;
-        private bool open = false;
+        private bool mIsPlayerInRange;
+        private bool mOpen = false;
 
         private void OnTriggerEnter2D(Collider2D collision)
         {
             if (collision.GetComponent<Player>() != null)
             {
-                isPlayerInRange = true;
+                mIsPlayerInRange = true;
             }
         }
 
@@ -24,23 +24,23 @@ namespace Monster
         {
             if (collision.GetComponent<Player>() != null)
             {
-                open = false;
+                mOpen = false;
 
-                isPlayerInRange = false;
+                mIsPlayerInRange = false;
             }
         }
 
         // Update is called once per frame
         void Update()
         {
-            if (!isPlayerInRange)
+            if (!mIsPlayerInRange)
             {
                 return;
             }
 
-            if (Input.GetKeyDown(KeyCode.UpArrow) && open == false)
+            if (Input.GetKeyDown(KeyCode.UpArrow) && mOpen == false)
             {
-                open = true;
+                mOpen = true;
                 door.ColliderOff();
                 StartCoroutine(OpenDoor());
             }

@@ -10,38 +10,38 @@ namespace Monster
     [RequireComponent(typeof(BoxCollider2D))]
     public class Player : TargetTableObject
     {
-        private Rigidbody2D rigidbody2D;
-        private PlayerData playerData;
-        private Animator animator;
+        public float mSpeed = 5f;
 
-        private enum MoveAxis
+        private Rigidbody2D mRigidbody2D;
+        private PlayerData mPlayerData;
+        private Animator mAnimator;
+
+        private enum EMoveAxis
         { 
             None,
             Horizontal,
             Vertical
         }
 
-        private MoveAxis currentAxis = MoveAxis.None;
-
-        public float speed = 5f;
+        private EMoveAxis currentAxis = EMoveAxis.None;
 
         protected internal override void OnShow(object userData)
         {
             base.OnShow(userData);
 
-            playerData  = userData as PlayerData;
-            animator    = GetComponent<Animator>();
+            mPlayerData = userData as PlayerData;
+            mAnimator = GetComponent<Animator>();
 
-            if (playerData == null)
+            if (mPlayerData == null)
             {
                 Log.Warning("PlayerData Invalid");
 
                 return;
             }
 
-            rigidbody2D = GetComponent<Rigidbody2D>();
+            mRigidbody2D = GetComponent<Rigidbody2D>();
 
-            if (rigidbody2D == null)
+            if (mRigidbody2D == null)
             {
                 Log.Warning("Rigidbody2D가 없습니다.");
 
@@ -49,12 +49,12 @@ namespace Monster
             }
 
             // 플레이어의 초기 위치를 설정합니다.
-            transform.position = playerData.Position;
+            transform.position = mPlayerData.Position;
         }
 
        public void Update()
         {
-            if (rigidbody2D == null)
+            if (mRigidbody2D == null)
             {
                 return;
             }
@@ -83,22 +83,22 @@ namespace Monster
 
             // 이동 중인지 여부
             bool isMove = (x != 0f || y != 0f);
-            if (animator != null)
+            if (mAnimator != null)
             {
                 // 이동 중일 때만 마지막 바라보는 방향 계산
                 if (isMove)
                 {
-                    animator.SetFloat("MoveX", x);
-                    animator.SetFloat("MoveY", y);
+                    mAnimator.SetFloat("MoveX", x);
+                    mAnimator.SetFloat("MoveY", y);
                 }
 
                 // 이동 여부 전달 (Ide <-> Wlak 전환)
-                animator.SetBool("IsMove", isMove);
+                mAnimator.SetBool("IsMove", isMove);
             }
 
             Vector2 move = new Vector2(x, y).normalized;
 
-            rigidbody2D.MovePosition(rigidbody2D.position + move * speed * Time.deltaTime);
+            mRigidbody2D.MovePosition(mRigidbody2D.position + move * mSpeed * Time.deltaTime);
 
             /*
             //Debug.Log("UPDATE RUN");

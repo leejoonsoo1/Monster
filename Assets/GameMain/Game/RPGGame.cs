@@ -12,9 +12,9 @@ namespace Monster
         public static RPGGame Instance { get; private set; }
 
         private Player mPlayer      = null;
-        private string assetPath    = "Player";
+        private string mAssetPath   = "Player";
         //private EntityComponent entityComponent;
-        public override GameMode GameMode => GameMode.RPG;
+        public override EGameMode GameMode => EGameMode.RPG;
 
         public override void Initialize()
         {
@@ -29,7 +29,7 @@ namespace Monster
                 events.Subscribe(ShowEntityFailureEventArgs.EventId, OnShowEntityFailure);
             }
 
-            SpawnCharacter(assetPath, new Vector3(0f, 0f, 10f));
+            SpawnCharacter(mAssetPath, new Vector3(0f, 0f, 10f));
         }
 
         private void SpawnCharacter(string assetPath, Vector3 position)
@@ -72,7 +72,7 @@ namespace Monster
             }
 
             // 카메라가 생성된 Player를 따라가도록 설정
-            cameraFollow.target = mPlayer.transform;
+            cameraFollow.mTarget = mPlayer.transform;
 
             Log.Info("Camera Target Setting Success");
         }

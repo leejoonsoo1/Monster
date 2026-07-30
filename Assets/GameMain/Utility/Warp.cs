@@ -6,41 +6,41 @@ namespace Monster
     public class Warp : MonoBehaviour
     {
         [Header("충돌체")]
-        [SerializeField] public BoxCollider2D warpCollider;
+        [SerializeField] public BoxCollider2D mWarpCollider;
 
         [Header("워프 위치")]
-        [SerializeField] private Transform targetPosition;
+        [SerializeField] private Transform mTargetPosition;
 
-        private Player player;
+        private Player mPlayer;
 
         private void Awake()
         {
-            player = FindAnyObjectByType<Player>();
-            warpCollider = GetComponent<BoxCollider2D>();
+            mPlayer         = FindAnyObjectByType<Player>();
+            mWarpCollider   = GetComponent<BoxCollider2D>();
         }
 
         public void WarpPlayer()
         {
-            if (player == null)
+            if (mPlayer == null)
             {
-                player = FindAnyObjectByType<Player>();
+                mPlayer = FindAnyObjectByType<Player>();
             }
 
-            if (player == null)
-            {
-                Debug.LogWarning("Player를 찾을 수 없습니다.");
-
-                return;
-            }
-
-            if (targetPosition == null)
+            if (mPlayer == null)
             {
                 Debug.LogWarning("Player를 찾을 수 없습니다.");
 
                 return;
             }
 
-            player.transform.position = targetPosition.position;
+            if (mTargetPosition == null)
+            {
+                Debug.LogWarning("Player를 찾을 수 없습니다.");
+
+                return;
+            }
+
+            mPlayer.transform.position = mTargetPosition.position;
         }
 
         private void OnTriggerEnter2D(Collider2D collision)

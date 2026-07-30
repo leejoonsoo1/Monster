@@ -6,31 +6,31 @@ namespace Monster
     public class Door : MonoBehaviour
     {
         [Header("문 충돌체")]
-        [SerializeField] public BoxCollider2D doorCollider;
+        [SerializeField] private BoxCollider2D mDoorCollider;
 
         private void Awake()
         {
-            doorCollider = GetComponent<BoxCollider2D>();
+            mDoorCollider = GetComponent<BoxCollider2D>();
 
-            if (doorCollider == null)
+            if (mDoorCollider == null)
             {
-                doorCollider = gameObject.AddComponent<BoxCollider2D>();
+                mDoorCollider = gameObject.AddComponent<BoxCollider2D>();
             }
         }
 
         public void ColliderOn()
         {
-            if (doorCollider != null)
+            if (mDoorCollider != null)
             {
-                doorCollider.enabled = true;
+                mDoorCollider.enabled = true;
             }
         }
 
         public void ColliderOff()
         {
-            if (doorCollider != null)
+            if (mDoorCollider != null)
             {
-                doorCollider.enabled = false;
+                mDoorCollider.enabled = false;
             }
         }
     }

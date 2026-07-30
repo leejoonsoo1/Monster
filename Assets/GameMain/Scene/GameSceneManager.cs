@@ -12,17 +12,17 @@ namespace Monster
         // <summary>
         // Logo 씬 이름.
         // </summary>
-        private const string LogoSceneName = "Logo";
+        private const string mLogoSceneName = "Logo";
 
         // <summary>
         // Main 씬 이름.
         // </summary>
-        private const string MainSceneName = "Main";
+        private const string mMainSceneName = "Main";
 
         // <summary>
         // Battle 씬 이름.
         // </summary>
-        private const string BattleSceneName = "Battle";
+        private const string mBattleSceneName = "Battle";
 
         // <summary>
         // Logo 씬을 로드
@@ -31,7 +31,7 @@ namespace Monster
         {
             Log.Info("Load Logo Scene");
 
-            SceneManager.LoadScene(LogoSceneName);
+            SceneManager.LoadScene(mLogoSceneName);
         }
 
         // <summary>
@@ -41,7 +41,7 @@ namespace Monster
         {
             Log.Info("Load Main Scene");
 
-            SceneManager.LoadScene(MainSceneName);
+            SceneManager.LoadScene(mMainSceneName);
         }
 
         // <summary>
@@ -51,7 +51,7 @@ namespace Monster
         {
             Log.Info("Load Battle Scene");
 
-            SceneManager.LoadScene(BattleSceneName);
+            SceneManager.LoadScene(mBattleSceneName);
         }
 
         // <summary>

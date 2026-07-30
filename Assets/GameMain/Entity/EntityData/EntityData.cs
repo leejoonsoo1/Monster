@@ -7,7 +7,7 @@ namespace Monster
     public abstract class EntityData
     {
         [SerializeField]
-        private int mId = 0;
+        private int mMId = 0;
 
         [SerializeField]
         private int mTypeId = 0;
@@ -20,7 +20,7 @@ namespace Monster
 
         protected EntityData(int entityId, int typeId)
         {
-            mId = entityId;
+            mMId = entityId;
             mTypeId = typeId;
         }
 
@@ -31,7 +31,7 @@ namespace Monster
         {
             get
             {
-                return mId;
+                return mMId;
             }
         }
 

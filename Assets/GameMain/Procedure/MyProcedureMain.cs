@@ -15,7 +15,7 @@ namespace Monster
     public class MyProcedureMain : MyProcedureBase
     {
         // Main 프로시저가 관리할 실제 Unity 씬
-        private const string MainSceneAssetName = "Assets/Scenes/MainScenes.unity";
+        private const string mMainSceneAssetName = "Assets/Scenes/MainScenes.unity";
 
         // UGF 이벤트를 관리하는 컴포넌트
         private EventComponent mEventComponent = null;
@@ -82,7 +82,7 @@ namespace Monster
             mEventComponent.Subscribe(LoadSceneFailureEventArgs.EventId, OnLoadSceneFailure);
 
             // Main 씬이 이미 로드되어 있다면 다시 로드하지 않습니다.
-            if (mSceneComponent.SceneIsLoaded(MainSceneAssetName))
+            if (mSceneComponent.SceneIsLoaded(mMainSceneAssetName))
             {
                 Log.Info("Main Scene은 이미 로드되어 있습니다.");
 
@@ -93,7 +93,7 @@ namespace Monster
             }
 
             // Main 씬을 로드합니다.
-            mSceneComponent.LoadScene(MainSceneAssetName);
+            mSceneComponent.LoadScene(mMainSceneAssetName);
         }
 
         // <summary>
@@ -139,16 +139,16 @@ namespace Monster
 
             // 게임 종료가 아니라 다른 프로시저로 이동하는 경우
             // Main 씬이 로드되어 있으면 언로드 합니다.
-            if (!isShutdown && mSceneComponent != null && mSceneComponent.SceneIsLoaded(MainSceneAssetName))
+            if (!isShutdown && mSceneComponent != null && mSceneComponent.SceneIsLoaded(mMainSceneAssetName))
             {
-                mSceneComponent.UnloadScene(MainSceneAssetName);
+                mSceneComponent.UnloadScene(mMainSceneAssetName);
             }
 
             // 사용하던 객체와 상태를 초기화합니다.
-            mSceneLoaded = false;
-            mGameInitialized = false;
-            mEventComponent = null;
-            mSceneComponent = null;
+            mSceneLoaded        = false;
+            mGameInitialized    = false;
+            mEventComponent     = null;
+            mSceneComponent     = null;
 
             //mPlayer?.Shutdown();
             //mGame = null;
@@ -183,7 +183,7 @@ namespace Monster
             }
 
             // Main 씬이 아닌 다른 씬의 실패 이벤트는 무시합니다.
-            if (ne.SceneAssetName != MainSceneAssetName)
+            if (ne.SceneAssetName != mMainSceneAssetName)
             {
                 return;
             }
@@ -212,7 +212,7 @@ namespace Monster
                 return;
             }
 
-            if (ne.SceneAssetName != MainSceneAssetName)
+            if (ne.SceneAssetName != mMainSceneAssetName)
             {
                 return;
             }

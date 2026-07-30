@@ -32,7 +32,7 @@ namespace Monster
             Log.Warning("Show entity failure with error message '{0}'.", ne.ErrorMessage);
         }
 
-        public abstract GameMode GameMode
+        public abstract EGameMode GameMode
         {
             get;
         }

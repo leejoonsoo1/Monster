@@ -1,6 +1,6 @@
 namespace Monster
 {
-    public enum GameMode : byte
+    public enum EGameMode : byte
     {
         RPG,
     }
