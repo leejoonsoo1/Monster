@@ -15,7 +15,7 @@ namespace Monster
         {
             base.OnShow(userData);
 
-            mTargetableObjectData = userData as TargetableObjectData;
+            mTargetableObjectData = userData as TargetTableObject;
 
             if (mTargetableObjectData == null)
             {
@@ -41,6 +41,6 @@ namespace Monster
         }
 
         [SerializeField]
-        private TargetableObjectData mTargetableObjectData = null;
+        private TargetTableObject mTargetableObjectData = null;
     }
 }
