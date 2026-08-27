@@ -5,50 +5,29 @@ namespace Monster
 {
     public class Warp : MonoBehaviour
     {
-        [Header("충돌체")]
-        [SerializeField] public BoxCollider2D mWarpCollider;
-
-        [Header("워프 위치")]
-        [SerializeField] private Transform mTargetPosition;
-
-        private Player mPlayer;
-
-        private void Awake()
+        public void WarpPlayer(Player player)
         {
-            mPlayer         = FindAnyObjectByType<Player>();
-            mWarpCollider   = GetComponent<BoxCollider2D>();
-        }
-
-        public void WarpPlayer()
-        {
-            if (mPlayer == null)
-            {
-                mPlayer = FindAnyObjectByType<Player>();
-            }
-
-            if (mPlayer == null)
+            // mPlayer가 아니라 매개변수로 받은 player를 검사합니다.
+            if (player == null)
             {
                 Debug.LogWarning("Player를 찾을 수 없습니다.");
 
                 return;
             }
-
-            if (mTargetPosition == null)
-            {
-                Debug.LogWarning("Player를 찾을 수 없습니다.");
-
-                return;
-            }
-
-            mPlayer.transform.position = mTargetPosition.position;
         }
 
         private void OnTriggerEnter2D(Collider2D collision)
         {
-            if (collision.GetComponent<Player>() != null)
+            // 여기서 실제로 워프 포인트에 들어온 Player를 가져옵니다.
+            Player pㅣayer = collision.GetComponent<Player>();
+
+            if (pㅣayer == null)
             {
-                WarpPlayer();
+                return;
             }
+
+            // 위에서 찾은 Player를 WarpPlayer를 함수로 넘깁니다.
+            WarpPlayer(pㅣayer);
         }
     }
 }

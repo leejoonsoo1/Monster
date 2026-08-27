@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.XR;
 using UnityGameFramework.Runtime;
@@ -28,6 +29,13 @@ namespace Monster
 
         // 현재 Player가 실행 중인 상태입니다.
         private PlayerState mCurrentState;
+
+        // 코루틴 제어 변수
+        private Coroutine mMoveCoroutine;
+
+        private int mMoveVersion = 0;
+
+        private Vector2 mTargetPosition;
 
         // Player의 대기 상태입니다.
         public PlayerIdleState IdleState { get; private set; }
@@ -75,7 +83,7 @@ namespace Monster
             }
 
             // 현재 씬에 있는 TilemapManager를 찾습니다.
-           mTilemapManager = Object.FindAnyObjectByType<TilemapManager>();
+            mTilemapManager = Object.FindAnyObjectByType<TilemapManager>();
 
             if (mTilemapManager == null)
             {
@@ -85,13 +93,13 @@ namespace Monster
             }
 
             // 스폰 위치가 속한 셀을 계산합니다.
-            Vector3Int spawnCell    = mGrid.WorldToCell(mPlayerData.Position);
+            Vector3Int spawnCell = mGrid.WorldToCell(mPlayerData.Position);
 
             // 스폰 셀의 중앙 좌표를 가져옵니다.
-            Vector3 spawnCenter     = mGrid.GetCellCenterWorld(spawnCell);
+            Vector3 spawnCenter = mGrid.GetCellCenterWorld(spawnCell);
 
             // 플레이어를 셀 중앙에 생성합니다.
-            transform.position   = new Vector3(spawnCenter.x, spawnCenter.y, transform.position.z);
+            transform.position = new Vector3(spawnCenter.x, spawnCenter.y, transform.position.z);
 
             // Rigidbody2D의 위치도 동일하게 맞춥니다.
             mRigidbody2D.position = new Vector2(spawnCenter.x, spawnCenter.y);
@@ -153,14 +161,17 @@ namespace Monster
             {
                 return Vector2.up;
             }
+
             if (Input.GetKey(KeyCode.DownArrow))
             {
                 return Vector2.down;
             }
+
             if (Input.GetKey(KeyCode.LeftArrow))
             {
                 return Vector2.left;
             }
+
             if (Input.GetKey(KeyCode.RightArrow))
             {
                 return Vector2.right;
@@ -173,7 +184,6 @@ namespace Monster
         // 현재 저장된 MoveDirection을 이용하여
         // 바로 앞 타일 중앙으로 한 칸 이동을 시작합니다.
         // </summary>
-
         public void StartTileMove()
         {
             // 이미 이동하고 있다면 중복 이동을 실행하지 않습니다.
@@ -181,8 +191,6 @@ namespace Monster
             {
                 return;
             }
-
-            Vector2 moveDirection = mMoveDirection;
 
             if (mMoveDirection == Vector2.zero)
             {
@@ -195,7 +203,6 @@ namespace Monster
             // 입력 방향 바로 앞의 셀을 계산합니다.
             Vector3Int targetCell = currentCell + new Vector3Int(Mathf.RoundToInt(mMoveDirection.x), Mathf.RoundToInt(mMoveDirection.y), 0);
 
-            // 이동 불가 타일 검사
             List<EBlockedTileType> blockedTIleTypes = mTilemapManager.GetBlockedTileTypes(targetCell);
 
             if (blockedTIleTypes.Count > 0)
@@ -209,10 +216,13 @@ namespace Monster
             Vector3 targetCellCenter = mGrid.GetCellCenterWorld(targetCell);
 
             // Vector3를 Vector2 좌표를 전환합니다.
-            Vector2 targetPosition = new Vector2(targetCellCenter.x, targetCellCenter.y);
+            mTargetPosition = new Vector2(targetCellCenter.x, targetCellCenter.y);
 
-            // 목표 타일 중앙으로 이동을 시작합니다.
-            StartCoroutine(MoveToCell(targetPosition));
+            // 새로운 이동을 시작할 때 이동 번호를 증가시킵니다.
+            mMoveVersion++;
+
+            // 이번 이동의 번호를 코루틴으로 전달합니다.
+            StartCoroutine(MoveToCell(mTargetPosition, mMoveVersion));
         }
 
         // <summary>
@@ -246,24 +256,35 @@ namespace Monster
         // <summary>
         // 플레이어를 목표 타일의 중앙까지 부드럽게 이동합니다.
         // </summary>
-        private IEnumerator MoveToCell(Vector2 targetPosition)
+        private IEnumerator MoveToCell(Vector2 targetPosition, int moveVersion)
         {
             // 이동이 끝날 때까지 다른 이동을 막습니다.
             mIsMoving = true;
 
-            while (Vector2.Distance(mRigidbody2D.position, targetPosition) > 0.01f)
+            while (Vector2.Distance(mRigidbody2D.position, mTargetPosition) > 0.01f)
             {
-                Vector2 nextPosition = Vector2.MoveTowards(mRigidbody2D.position, targetPosition, mSpeed * Time.fixedDeltaTime);
+                // 워프 등으로 이동 번호가 바뀌었다면
+                // 이 코루틴은 과거 이동이므로 즉시 종료합니다.
+                if (moveVersion != mMoveVersion)
+                {
+                    yield break;
+                }
+
+                Vector2 nextPosition = Vector2.MoveTowards(mRigidbody2D.position, mTargetPosition, mSpeed * Time.fixedDeltaTime);
 
                 mRigidbody2D.MovePosition(nextPosition);
 
                 yield return new WaitForFixedUpdate();
             }
 
-            // 목표 타일 중앙에 정확히 고정합니다.
+            // 마지막 순간에도 기존 이동이 취소됐는지 확인합니다.
+            if (moveVersion != mMoveVersion)
+            {
+                yield break;
+            }
+
             mRigidbody2D.position = targetPosition;
 
-            // 한 칸 이동이 완료되었습니다.
             mIsMoving = false;
         }
     }
