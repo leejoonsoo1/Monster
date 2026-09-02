@@ -1,9 +1,10 @@
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityGameFramework.Runtime;
 
 namespace Monster
 { 
-    public class Door : MonoBehaviour
+    public class Door : EntityLogic
     {
         [Header("문 충돌체")]
         [SerializeField] private BoxCollider2D mDoorCollider;

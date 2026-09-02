@@ -5,53 +5,45 @@ using UnityEngine.Tilemaps;
 
 namespace Monster
 {
-    public class TilemapManager : MonoBehaviour
+    public class TilemapManager
     {
         public enum EWalkableTileType
         {
-            Ground1 = 0,
-            Ground2 = 1,
-            Grace = 2,
-            Tree3 = 3,
-            Building3 = 4,
+            Ground1     = 0,
+            Ground2     = 1,
+            Grace       = 2,
+            Tree3       = 3,
+            Building3   = 4,
             LightHouse2 = 5,
-            Building2 = 6,
+            Building2   = 6,
         }
 
         public enum EBlockedTileType
         {
-            Hill = 7,
-            Props = 8,
-            Tree1 = 9,
-            Tree2 = 10,
-            Building1 = 11,
-            Building2 = 12,
-            LgihtHouse1 = 13
+            Hill        = 7,
+            Props       = 8,
+            Tree1       = 9,
+            Tree2       = 10,
+            Building1   = 11,
+            Building2   = 12,
+            LgihtHouse1 = 13,
+            Tree4       = 14
         }
-
-        // 현재 씬에서 사용할 TilemapManager입니다.
-        public static TilemapManager Instance { get; private set; }
 
         // Gird 아래에 배치된 모든 Tilemap을 저장합니다.
         private Tilemap[] mTilemaps;
 
-        private void Awake()
+        // 현재 씬에서 사용할 TilemapManager입니다.
+        public static TilemapManager Instance { get; private set; }
+
+        // RPGGame에서 호출합니다.
+        public void Initialize(Tilemap[] tilemaps)
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-
-                return;
-            }
-
-            Instance = this;
-
-            //// TilemapManager가 붙은 Gird 아래의 모든 타일맵을 가져옵니다.
-            mTilemaps = GetComponentsInChildren<Tilemap>();
+            mTilemaps = tilemaps;
 
             if (mTilemaps == null || mTilemaps.Length == 0)
             {
-                Debug.LogError("TilemapManager: Grid 아래에서 TIlemap을 찾을 수 없습니다.");
+                return;
             }
         }
 
@@ -139,6 +131,49 @@ namespace Monster
             List<EBlockedTileType> blockedTileTypes = GetBlockedTileTypes(cellPosition);
 
             return IsWalkable(blockedTileTypes);
+        }
+
+        // 현재 셀이 수풀인지 확인합니다.
+        public bool IsGrassTile(Vector3Int cellPosition)
+        {
+            if (mTilemaps == null)
+            {
+                return false;
+            }
+
+            foreach (Tilemap tilemap in mTilemaps)
+            {
+                if (tilemap == null)
+                {
+                    continue;
+                }
+
+                if (!tilemap.HasTile(cellPosition))
+                {
+                    continue;
+                }
+
+                bool isWalkableTile = Enum.TryParse(tilemap.gameObject.name, true, out EWalkableTileType walkableTileType);
+
+                if (!isWalkableTile)
+                {
+                    continue;
+                }
+
+                // 현재 enum 이름이 Grace이므로 Grace로 검사
+                if (walkableTileType == EWalkableTileType.Grace)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // 게임 종료 또는 씬 정리 시 사용 가능
+        public void Shutdown()
+        {
+            mTilemaps = null;
         }
     }
 }

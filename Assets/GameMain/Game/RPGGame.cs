@@ -1,5 +1,8 @@
 using GameFramework.Event;
+using GameFramework.UI;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 using UnityGameFramework.Runtime;
 
 // 배틀 관련 규칙, 몬스터 체력 관련 규칙,
@@ -13,7 +16,27 @@ namespace Monster
 
         private Player mPlayer      = null;
         private string mAssetPath   = "Player";
-        //private EntityComponent entityComponent;
+
+        private TilemapManager mTilemapManager;
+        private EnCounterManager mEncounterManager;
+
+        public TilemapManager TilemapManager
+        {
+            get
+            {
+                return mTilemapManager;
+            }
+        }
+
+        public EnCounterManager EncounterManager
+        {
+            get
+            {
+                return mEncounterManager;
+            }
+        }
+
+        // private EntityComponent entityComponent;
         public override EGameMode GameMode => EGameMode.RPG;
 
         public override void Initialize()
@@ -21,7 +44,40 @@ namespace Monster
             base.Initialize();
             Instance = this;
 
-            var events = GameEntry.GetComponent<EventComponent>();
+            // TilemapManager는 더 이상 MonoBehaviour가 아니기 때문에
+            // FindAnyObjectByType<TilemapManager>()를 사용할 수 없습니다.
+            Grid grid = Object.FindAnyObjectByType<Grid>();
+
+            if (grid == null)
+            {
+                Log.Error("RPGGame : Grid를 찾을 수 없습니다.");
+
+                return;
+            }
+
+            // Grid 아래에 있는 모든 Tilemap 컴포넌트를 가져옵니다.
+            Tilemap[] tilemaps = grid.GetComponentsInChildren<Tilemap>();
+
+            if (tilemaps == null || tilemaps.Length == 0)
+            {
+                Log.Error("RPGGame : Grid 아래에서 Tilemap을 찾을 수 없습니다.");
+
+                return;
+            }
+
+            // 일반 C# 클래스인 TilemapManager를 직접 생성합니다.
+            mTilemapManager = new TilemapManager();
+
+            // 실제 Unity Tilemap들을 TilemapManager에 전달합니다.
+            mTilemapManager.Initialize(tilemaps);
+
+            // 일반 C# 클래스인 TilemapManager를 직접 생성합니다.
+            mEncounterManager = new EnCounterManager();
+
+            // RPGGame이 생성한 TilemapManager를 전달합니다.
+            mEncounterManager.Initialize(mTilemapManager);
+
+            EventComponent events = GameEntry.GetComponent<EventComponent>();
 
             if (events != null)
             {
@@ -48,7 +104,7 @@ namespace Monster
         {
             base.OnShowEntitySuccess(sender, gEvent);
 
-            ShowEntitySuccessEventArgs gPlayer = (ShowEntitySuccessEventArgs)gEvent;
+            ShowEntitySuccessEventArgs gPlayer = (ShowEntitySuccessEventArgs) gEvent;
 
             mPlayer = gPlayer.Entity.GetComponent<Player>();
 
@@ -80,7 +136,23 @@ namespace Monster
         protected override void OnShowEntityFailure(object sender, GameEventArgs e)
         {
             var ne = (ShowEntityFailureEventArgs)e;
+
             Log.Warning("Show entity failure: {0}", ne.ErrorMessage);
+        }
+
+        private void CheckEncounter()
+        {
+            if (RPGGame.Instance == null)
+            {
+                return;
+            }
+
+            EnCounterManager encounterManager = RPGGame.Instance.EncounterManager;
+
+            if (encounterManager == null)
+            {
+                return;
+            }
         }
     }
 }

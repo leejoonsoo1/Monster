@@ -1,9 +1,10 @@
 using TMPro;
 using UnityEngine;
+using UnityGameFramework.Runtime;
 
 namespace Monster
 {
-    public class Warp : MonoBehaviour
+    public class Warp : EntityLogic
     {
         public void WarpPlayer(Player player)
         {

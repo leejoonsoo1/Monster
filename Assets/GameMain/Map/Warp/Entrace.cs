@@ -1,10 +1,11 @@
 using System.Collections;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityGameFramework.Runtime;
 
 namespace Monster
 {
-    public class OpeenTheDoor : MonoBehaviour
+    public class OpeenTheDoor : EntityLogic
     {
         [Header("워프 위치")]
         [SerializeField] private Transform mTargetPosition;

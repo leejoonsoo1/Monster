@@ -83,7 +83,7 @@ namespace Monster
             }
 
             // 현재 씬에 있는 TilemapManager를 찾습니다.
-            mTilemapManager = Object.FindAnyObjectByType<TilemapManager>();
+            mTilemapManager = RPGGame.Instance.TilemapManager;
 
             if (mTilemapManager == null)
             {
