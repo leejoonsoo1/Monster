@@ -115,8 +115,10 @@ namespace Monster
             ChangeState(IdleState);
         }
 
-        public void Update()
+        protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
+            base.OnUpdate(elapseSeconds, realElapseSeconds);
+
             if (mRigidbody2D == null)
             {
                 return;

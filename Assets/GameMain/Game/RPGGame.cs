@@ -1,5 +1,6 @@
 using GameFramework.Event;
 using GameFramework.UI;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -14,8 +15,9 @@ namespace Monster
     {
         public static RPGGame Instance { get; private set; }
 
-        private Player mPlayer      = null;
-        private string mAssetPath   = "Player";
+        private Player mPlayer          = null;
+        private string mAssetPath       = "Player";
+        private string mMapAssetPath    = "Map";
 
         private TilemapManager mTilemapManager;
         private EnCounterManager mEncounterManager;
@@ -43,6 +45,19 @@ namespace Monster
         {
             base.Initialize();
             Instance = this;
+
+            EventComponent events = GameEntry.GetComponent<EventComponent>();
+
+            if (events != null)
+            {
+                events.Subscribe(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess);
+                events.Subscribe(ShowEntityFailureEventArgs.EventId, OnShowEntityFailure);
+            }
+
+            SpawnCharacter(mAssetPath, new Vector3(0f, 0f, 10f));
+            SpawnMap(mMapAssetPath, new Vector3(0f, 0f, 0f));
+
+            // todo Entity에서 Map 찾기
 
             // TilemapManager는 더 이상 MonoBehaviour가 아니기 때문에
             // FindAnyObjectByType<TilemapManager>()를 사용할 수 없습니다.
@@ -76,22 +91,26 @@ namespace Monster
 
             // RPGGame이 생성한 TilemapManager를 전달합니다.
             mEncounterManager.Initialize(mTilemapManager);
+        }
 
-            EventComponent events = GameEntry.GetComponent<EventComponent>();
+        private void SpawnMap(string assetPath, Vector3 position)
+        {
+            int id = EntitySerialId.Next();
 
-            if (events != null)
-            {
-                events.Subscribe(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess);
-                events.Subscribe(ShowEntityFailureEventArgs.EventId, OnShowEntityFailure);
-            }
-
-            SpawnCharacter(mAssetPath, new Vector3(0f, 0f, 10f));
+            GameEntry.GetComponent<EntityComponent>().ShowEntity(
+                id,
+                typeof(Null),
+                assetPath,
+                "Map",
+                new MapData(id, 1, position)
+                );
         }
 
         private void SpawnCharacter(string assetPath, Vector3 position)
         {
             int id = EntitySerialId.Next();
 
+            // typeof 스크립트를 붙인다.
             GameEntry.GetComponent<EntityComponent>().ShowEntity(
                 id,
                 typeof(Player),

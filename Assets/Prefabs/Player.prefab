@@ -9,9 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7319570074041246435}
-  - component: {fileID: 8395646843830242522}
   - component: {fileID: 6717521540936314589}
-  - component: {fileID: -4259091707487053439}
   - component: {fileID: -1629904384269829780}
   - component: {fileID: 2892455133366712725}
   - component: {fileID: 5117355441398083807}
@@ -37,19 +35,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8395646843830242522
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 221549217592461040}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be44db2b709aa4b4790b88577769b325, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Monster.Player
-  speed: 7
 --- !u!212 &6717521540936314589
 SpriteRenderer:
   serializedVersion: 2
@@ -96,7 +81,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -273766281
-  m_SortingLayer: 12
+  m_SortingLayer: 8
   m_SortingOrder: 1
   m_MaskInteraction: 0
   m_Sprite: {fileID: 1938913617, guid: 5fa53d5b2119fe543b75bfc088e7c919, type: 3}
@@ -109,18 +94,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &-4259091707487053439
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 221549217592461040}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bac1e67b934ef0944b6de46554cf5042, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UnityGameFramework.Runtime.Entity
 --- !u!95 &-1629904384269829780
 Animator:
   serializedVersion: 7

@@ -127,6 +127,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3710550849856626876, guid: 0c57aed266d3dd04c8a7639f949371c0, type: 3}
+      propertyPath: mEntityGroups.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3710550849856626876, guid: 0c57aed266d3dd04c8a7639f949371c0, type: 3}
+      propertyPath: mEntityGroups.Array.data[4].mName
+      value: Map
+      objectReference: {fileID: 0}
+    - target: {fileID: 3710550849856626876, guid: 0c57aed266d3dd04c8a7639f949371c0, type: 3}
+      propertyPath: mEntityGroups.Array.data[4].mInstanceCapacity
+      value: 64
+      objectReference: {fileID: 0}
+    - target: {fileID: 3710550849856626876, guid: 0c57aed266d3dd04c8a7639f949371c0, type: 3}
+      propertyPath: mEntityGroups.Array.data[4].mInstanceExpireTime
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 3710550849856626876, guid: 0c57aed266d3dd04c8a7639f949371c0, type: 3}
+      propertyPath: mEntityGroups.Array.data[4].mInstanceAutoReleaseInterval
+      value: 60
+      objectReference: {fileID: 0}
     - target: {fileID: 6358112816711621563, guid: 0c57aed266d3dd04c8a7639f949371c0, type: 3}
       propertyPath: m_Name
       value: GameFramework
@@ -473,9 +493,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98e199066b03b5446968284a8daef5b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Monster.CameraFollow
-  target: {fileID: 0}
-  offset: {x: 0, y: 0, z: -10}
-  followSpeed: 10
+  mTarget: {fileID: 0}
+  mOffset: {x: 0, y: 0, z: -20}
+  mFollowSpeed: 10
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

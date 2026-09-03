@@ -50,8 +50,10 @@ namespace Monster
             mPlayer = null;
         }
 
-        private void Update()
+        protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
+            base.OnUpdate(elapseSeconds, realElapseSeconds);
+
             if (!mIsPlayerInRange)
             {
                 return;
