@@ -68,6 +68,7 @@ namespace UnityGameFramework.Runtime
 
             ShowEntityInfo showEntityInfo = (ShowEntityInfo)userData;
             Type entityLogicType = showEntityInfo.EntityLogicType;
+
             if (entityLogicType == null)
             {
                 Log.Error("Entity logic type is invalid.");
@@ -102,7 +103,7 @@ namespace UnityGameFramework.Runtime
                 Log.Error("Entity '[{0}]{1}' OnInit with exception '{2}'.", mId, mEntityAssetName, exception);
             }
         }
-
+        
         public void OnRecycle()
         {
             try

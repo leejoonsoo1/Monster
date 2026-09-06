@@ -1,3 +1,4 @@
+using GameFramework.Entity;
 using GameFramework.Event;
 using GameFramework.UI;
 using Unity.VisualScripting;
@@ -6,18 +7,23 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityGameFramework.Runtime;
 
-// 배틀 관련 규칙, 몬스터 체력 관련 규칙,
-// 1. 이동해서 만나는 것 까지만 생각.
-// 2. 
+using ShowEntitySuccessEventArgs = UnityGameFramework.Runtime.ShowEntitySuccessEventArgs;
+using ShowEntityFailureEventArgs = UnityGameFramework.Runtime.ShowEntityFailureEventArgs;
+
 namespace Monster
 {
     public class RPGGame : GameBase
     {
         public static RPGGame Instance { get; private set; }
 
-        private Player mPlayer          = null;
-        private string mAssetPath       = "Player";
-        private string mMapAssetPath    = "Map";
+        private Grid mGrid;
+        private Player mPlayer;
+
+        private string mAssetPath               = "Player";
+        private const string PlayerGroupName    = "Player";
+        
+        private string mMapAssetPath            = "Map";
+        private const string MapGroupName       = "Map";
 
         private TilemapManager mTilemapManager;
         private EnCounterManager mEncounterManager;
@@ -46,64 +52,40 @@ namespace Monster
             base.Initialize();
             Instance = this;
 
-            EventComponent events = GameEntry.GetComponent<EventComponent>();
+            EventComponent eventComponent = GameEntry.GetComponent<EventComponent>();
 
-            if (events != null)
+            if (eventComponent == null)
             {
-                events.Subscribe(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess);
-                events.Subscribe(ShowEntityFailureEventArgs.EventId, OnShowEntityFailure);
-            }
-
-            SpawnCharacter(mAssetPath, new Vector3(0f, 0f, 10f));
-            SpawnMap(mMapAssetPath, new Vector3(0f, 0f, 0f));
-
-            // todo Entity에서 Map 찾기
-
-            // TilemapManager는 더 이상 MonoBehaviour가 아니기 때문에
-            // FindAnyObjectByType<TilemapManager>()를 사용할 수 없습니다.
-            Grid grid = Object.FindAnyObjectByType<Grid>();
-
-            if (grid == null)
-            {
-                Log.Error("RPGGame : Grid를 찾을 수 없습니다.");
-
+                Log.Error("EventComponent를 찾을 수 없습니다.");
+                
                 return;
             }
 
-            // Grid 아래에 있는 모든 Tilemap 컴포넌트를 가져옵니다.
-            Tilemap[] tilemaps = grid.GetComponentsInChildren<Tilemap>();
+            eventComponent.Subscribe(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess);
+            eventComponent.Subscribe(ShowEntityFailureEventArgs.EventId, OnShowEntityFailure);
 
-            if (tilemaps == null || tilemaps.Length == 0)
-            {
-                Log.Error("RPGGame : Grid 아래에서 Tilemap을 찾을 수 없습니다.");
-
-                return;
-            }
-
-            // 일반 C# 클래스인 TilemapManager를 직접 생성합니다.
-            mTilemapManager = new TilemapManager();
-
-            // 실제 Unity Tilemap들을 TilemapManager에 전달합니다.
-            mTilemapManager.Initialize(tilemaps);
-
-            // 일반 C# 클래스인 TilemapManager를 직접 생성합니다.
-            mEncounterManager = new EnCounterManager();
-
-            // RPGGame이 생성한 TilemapManager를 전달합니다.
-            mEncounterManager.Initialize(mTilemapManager);
+            SpawnMap(mMapAssetPath, Vector3.zero);
         }
 
         private void SpawnMap(string assetPath, Vector3 position)
         {
             int id = EntitySerialId.Next();
 
-            GameEntry.GetComponent<EntityComponent>().ShowEntity(
-                id,
-                typeof(Null),
-                assetPath,
-                "Map",
-                new MapData(id, 1, position)
-                );
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+
+            if (entityComponent == null)
+            {
+                Log.Error("EntityComponent 를 찾을 수 없습니다.");
+
+                return;
+            }
+
+            entityComponent.ShowEntity(
+                id,                             
+                typeof(MapEntity),             // 실행할 EntityLogic
+                assetPath,                      // "Map" 프리팹 Addressable 이름
+                "Map",                          // Entity Group 이름
+                new MapData(id, 1, position, Quaternion.identity));  // MapEntity.OnShow로 전달
         }
 
         private void SpawnCharacter(string assetPath, Vector3 position)
@@ -123,55 +105,142 @@ namespace Monster
         {
             base.OnShowEntitySuccess(sender, gEvent);
 
-            ShowEntitySuccessEventArgs gPlayer = (ShowEntitySuccessEventArgs) gEvent;
+            ShowEntitySuccessEventArgs args = (ShowEntitySuccessEventArgs) gEvent;
 
-            mPlayer = gPlayer.Entity.GetComponent<Player>();
+            if (args.Entity == null)
+            {
+                Log.Error("RPGGame : 생성된 Entity가 null입니다.");
+
+                return;
+            }
+
+            string entityGroupName = args.Entity.EntityGroup.Name;
+
+            if (entityGroupName == MapGroupName)
+            {
+                InitializeMap(args);
+
+                return;
+            }
+
+            if (entityGroupName == PlayerGroupName)
+            {
+
+                InitializePlayer(args);
+
+                return;
+            }
+        }
+
+        private void InitializeMap(ShowEntitySuccessEventArgs args)
+        {
+            // 방금 생성된 Map Entity 안에서 Grid를 찾습니다.
+            mGrid = args.Entity.GetComponentInChildren<Grid>(true);
+
+            if (mGrid == null)
+            {
+                Log.Error("RPGGame : Map Entity 안에서 Grid를 찾지 못했습니다.");
+
+                return;
+            }
+
+            Log.Info("RPGGame : Grid 찾기 성공");
+
+            // Grid 아래의 모든 Tilemap을 가져옵니다.
+            Tilemap[] tilemaps = mGrid.GetComponentsInChildren<Tilemap>(true);
+
+            if (tilemaps == null || tilemaps.Length == 0)
+            {
+                Log.Error("RPGGame : Grid 아래에서 Tilemap을 찾지 못했습니다.");
+
+                return;
+            }
+
+            Log.Info($"RPGGame : Tilemap 개수 = {tilemaps.Length}");
+
+
+            // =========================================
+            // TilemapManager 생성
+            // =========================================
+
+            // TilemapManager는 MonoBehaviour가 아니므로
+            // FindAnyObjectByType을 사용하지 않습니다.
+            mTilemapManager = new TilemapManager();
+
+            // Map 안에서 찾은 Tilemap들을 전달합니다.
+            mTilemapManager.Initialize(tilemaps);
+
+            Log.Info("RPGGame : TilemapManager Initialize Success");
+
+            // =========================================
+            // EnCounterManager 생성
+            // =========================================
+
+            mEncounterManager = new EnCounterManager();
+
+            // EncounterManager가
+            // Tilemap 정보를 사용할 수 있게 전달합니다.
+            mEncounterManager.Initialize(mTilemapManager);
+
+            Log.Info("RPGGame : EnCounterManager Initialize Success");
+
+            // =========================================
+            // Map 관련 초기화가 모두 끝난 다음
+            // Player를 생성합니다.
+            // =========================================
+            SpawnCharacter(mAssetPath, new Vector3(0f, 0f, 10f));
+        }
+
+        // =========================================
+        // Player 초기화
+        // =========================================
+        private void InitializePlayer(ShowEntitySuccessEventArgs args)
+        {
+            mPlayer = args.Entity.GetComponent<Player>();
 
             if (mPlayer == null)
             {
-                Log.Warning("Player Component not found");
+                Log.Warning("RPGGame : Player Component를 찾지 못했습니다.");
 
                 return;
             }
 
-            Log.Info("Player Spawn Success");
+            Log.Info("RPGGame : Player Component 찾기 성공");
 
-            // Main Camera에서 CameraFollow 컴포넌트를 가져온다.
-            CameraFollow cameraFollow = Camera.main.GetComponent<CameraFollow>();
+
+            // =========================================
+            // Camera 연결
+            // =========================================
+            Camera mainCamera = Camera.main;
+
+            if (mainCamera == null)
+            {
+                Log.Warning("RPGGame : Main Camera를 찾을 수 없습니다.");
+
+                return;
+            }
+
+            CameraFollow cameraFollow = mainCamera.GetComponent<CameraFollow>();
 
             if (cameraFollow == null)
             {
-                Log.Warning("CameraFollow Component not found");
+                Log.Warning("RPGGame : CameraFollow Component를 찾을 수 없습니다.");
 
                 return;
             }
 
-            // 카메라가 생성된 Player를 따라가도록 설정
+            // 생성된 Player를 카메라 Target으로 설정
             cameraFollow.mTarget = mPlayer.transform;
 
-            Log.Info("Camera Target Setting Success");
+            Log.Info("RPGGame : Camera Target Setting Success");
         }
 
-        protected override void OnShowEntityFailure(object sender, GameEventArgs e)
+
+        protected override void OnShowEntityFailure(object sender, GameEventArgs gEvent)
         {
-            var ne = (ShowEntityFailureEventArgs)e;
+            var vEvent = (ShowEntityFailureEventArgs)gEvent;
 
-            Log.Warning("Show entity failure: {0}", ne.ErrorMessage);
-        }
-
-        private void CheckEncounter()
-        {
-            if (RPGGame.Instance == null)
-            {
-                return;
-            }
-
-            EnCounterManager encounterManager = RPGGame.Instance.EncounterManager;
-
-            if (encounterManager == null)
-            {
-                return;
-            }
+            Log.Warning("Show entity failure: {0}", vEvent.ErrorMessage);
         }
     }
 }
