@@ -51,9 +51,9 @@ namespace Monster
             Log.Info("ProcedureMain: Enter");
 
             // 프로시저에 다시 진입할 수도 있으므로 상태를 초기화합니다.
-            mSceneLoaded = false;
-            mGameInitialized = false;
-            mGame = null;
+            mSceneLoaded        = false;
+            mGameInitialized    = false;
+            mGame               = null;
 
             // 현재 GameFramework 오브젝트에서 필요한 컴포넌트를 가져옵니다.
             mEventComponent = GameEntry.GetComponent<EventComponent>();
@@ -109,18 +109,7 @@ namespace Monster
             {
                 return;
             }
-
-            // RPGGame.Initailize()는 씬 로드 성공 시 이미 한 번 호출됩니다.
-            // 따라서 여기서 매 프레임 Initialize()를 호출하지 않습니다.
-
-            /*
-            if (mGame != null)
-            {
-                mGame.Update(elapseSeconds, realElapseSeconds);
-            }
-            */
         }
-
 
         // <summary>
         // MyProcedureMain에서 빠져나갈 떄 호출됩니다.

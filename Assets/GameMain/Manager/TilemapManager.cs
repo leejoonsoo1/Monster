@@ -10,24 +10,25 @@ namespace Monster
         public enum EWalkableTileType
         {
             Ground1     = 0,
-            Ground2     = 1,
-            Grace       = 2,
-            Tree3       = 3,
-            Building3   = 4,
-            LightHouse2 = 5,
-            Building2   = 6,
+            Ground2,
+            Grace, 
+            Tree3,
+            Building3,
+            LightHouse2,
+            Building2,
         }
 
         public enum EBlockedTileType
         {
-            Hill        = 7,
-            Props       = 8,
-            Tree1       = 9,
-            Tree2       = 10,
-            Building1   = 11,
-            Building2   = 12,
-            LgihtHouse1 = 13,
-            Tree4       = 14
+            Hill = 7,
+            Props,
+            Tree1,
+            Tree2,
+            Building1,
+            Building2,
+            LgihtHouse1,
+            Tree4,
+            Door
         }
 
         // Gird 아래에 배치된 모든 Tilemap을 저장합니다.

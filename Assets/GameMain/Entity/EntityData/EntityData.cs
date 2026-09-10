@@ -7,21 +7,21 @@ namespace Monster
     public abstract class EntityData
     {
         [SerializeField]
-        private int mMId = 0;
+        private int mMId    = 0;
 
         [SerializeField]
         private int mTypeId = 0;
 
         [SerializeField]
-        private Vector3 mPosition = Vector3.zero;
+        private Vector3 mPosition       = Vector3.zero;
 
         [SerializeField]
-        private Quaternion mRotation = Quaternion.identity;
+        private Quaternion mRotation    = Quaternion.identity;
 
         protected EntityData(int entityId, int typeId)
         {
-            mMId = entityId;
-            mTypeId = typeId;
+            mMId        = entityId;
+            mTypeId     = typeId;
         }
 
         /// <summary>

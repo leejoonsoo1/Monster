@@ -82,9 +82,9 @@ namespace Monster
 
             entityComponent.ShowEntity(
                 id,                             
-                typeof(MapEntity),             // 실행할 EntityLogic
-                assetPath,                      // "Map" 프리팹 Addressable 이름
-                "Map",                          // Entity Group 이름
+                typeof(MapEntity),                                   // 실행할 EntityLogic
+                assetPath,                                           // "Map" 프리팹 Addressable 이름
+                "Map",                                               // Entity Group 이름
                 new MapData(id, 1, position, Quaternion.identity));  // MapEntity.OnShow로 전달
         }
 

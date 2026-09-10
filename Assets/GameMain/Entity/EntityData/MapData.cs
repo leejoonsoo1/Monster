@@ -10,7 +10,7 @@ namespace Monster
     public class MapData : EntityData
     {
         //[SerializeField] private int mMaxHP = 100;
-        [SerializeField] private float mMoveSpeed = 9.5f;
+        //[SerializeField] private float mMoveSpeed = 9.5f;
 
         private MapData mMapData;
 
