@@ -2,6 +2,7 @@ using NUnit.Framework;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditor.AI;
 using UnityEngine;
 using UnityEngine.XR;
 using UnityGameFramework.Runtime;
@@ -15,6 +16,13 @@ namespace Monster
     {
         [Header("이동설정")]
         public float mSpeed = 9f;
+
+        [Header("절벽 점프 설정")]
+        [SerializeField] private float mJumpDuration    = 0.35f;
+        [SerializeField] private float mJumpHeight      = 0.4f;
+
+        // 캐릭터 그래픽이 들어 있는 자식 오브젝트
+        [SerializeField] private Transform mVisual;
 
         private Rigidbody2D mRigidbody2D;
         private PlayerData mPlayerData;
@@ -55,7 +63,7 @@ namespace Monster
             base.OnShow(userData);
 
             mPlayerData     = userData as PlayerData;
-            mAnimator       = GetComponent<Animator>();
+            mAnimator       = GetComponentInChildren<Animator>();
             mRigidbody2D    = GetComponent<Rigidbody2D>();
 
             if (mPlayerData == null)
@@ -104,6 +112,14 @@ namespace Monster
             // Rigidbody2D의 위치도 동일하게 맞춥니다.
             mRigidbody2D.position = new Vector2(spawnCenter.x, spawnCenter.y);
 
+            // PlayerData로 전달받은 방향을
+            // 현재 Player의 이동 방향으로 저장합니다.
+            mMoveDirection = mPlayerData.Direction;
+
+            // Animator에도 방향을 전달하여
+            // 실제 캐릭터가 저장했던 방향을 바라보도록 합니다.
+            SetDirectionAnimation(mMoveDirection);
+
             // 생성 시 이동 상태를 초기화합니다.
             mIsMoving = false;
 
@@ -125,6 +141,14 @@ namespace Monster
             }
 
             if (mGrid == null)
+            {
+                return;
+            }
+
+            // Battle 전환을 기다리는 동안에는
+            // 추가 이동 입력을 받지 않습니다.
+            if (RPGGame.Instance != null &&
+                RPGGame.Instance.IsBattleRequested)
             {
                 return;
             }
@@ -199,12 +223,43 @@ namespace Monster
                 return;
             }
 
+            Vector3Int moveCell = new Vector3Int(Mathf.RoundToInt(mMoveDirection.x), Mathf.RoundToInt(mMoveDirection.y), 0);
+
             // 현재 플레이어가 위치한 셀을 구합니다.
-            Vector3Int currentCell = mGrid.WorldToCell(mRigidbody2D.position);
+            Vector3Int currentCell  = mGrid.WorldToCell(mRigidbody2D.position);
 
             // 입력 방향 바로 앞의 셀을 계산합니다.
-            Vector3Int targetCell = currentCell + new Vector3Int(Mathf.RoundToInt(mMoveDirection.x), Mathf.RoundToInt(mMoveDirection.y), 0);
+            Vector3Int targetCell   = currentCell + moveCell;
 
+            // =========================================
+            // 아래 방향으로 Hill을 만났을 때 점프
+            // =========================================
+            if (mMoveDirection == Vector2.down && mTilemapManager.IsHillTile(targetCell))
+            {
+                // Hill 타일을 넘어 두 칸 앞에 착지합니다.
+                Vector3Int landingCell = currentCell + moveCell * 2;
+
+                // 착지 지점이 막혀 있으면 점프하지 않습니다.
+                if (!mTilemapManager.IsWalkable(landingCell))
+                {
+                    mIsMoving = false;
+
+                    return;
+                }
+
+                Vector3 landingCenter = mGrid.GetCellCenterWorld(landingCell);
+                Vector2 landingPosition = new Vector2(landingCenter.x, landingCenter.y);
+
+                mMoveVersion++;
+
+                StartCoroutine(JumpToCell(landingPosition, mMoveVersion));
+
+                return;
+            }
+
+            // =========================================
+            // 기존 일반 이동 불가 검사
+            // =========================================
             List<EBlockedTileType> blockedTIleTypes = mTilemapManager.GetBlockedTileTypes(targetCell);
 
             if (blockedTIleTypes.Count > 0)
@@ -255,6 +310,43 @@ namespace Monster
             mAnimator.SetBool("IsMove", isMoving);
         }
 
+        // </summary>
+        // Player가 한 칸 이동을 완료했을 때
+        // 현재 위치에서 랜덤 인카운터를 검사합니다.
+        // </summary>
+        private void CheckEncounter()
+        {
+            if (RPGGame.Instance == null)
+            {
+                return;
+            }
+
+            if (RPGGame.Instance.EncounterManager == null)
+            {
+                return;
+            }
+
+            // 현재 Player가 위치한 Grid Cell을 가져옵니다.
+            Vector3Int currentCell = mGrid.WorldToCell(mRigidbody2D.position);
+
+            // 현재 셀이 수풀인지 확인하고
+            // 수풀이라면 일정 확률로 인카운터 판정합니다.
+            bool isEncounter = RPGGame.Instance.EncounterManager.TryEncounter(currentCell);
+
+            //인카운터가 발생하지 않았다면
+            // 그대로 필드 이동을 계속합니다.
+            if (!isEncounter)
+            {
+                return;
+            }
+
+            Log.Info($"Player : Random Encounter -"  + 
+                $"Cell = {currentCell}, " +
+                $"Direction = {mMoveDirection}");
+
+            RPGGame.Instance.RequestBattle();
+        }
+
         // <summary>
         // 플레이어를 목표 타일의 중앙까지 부드럽게 이동합니다.
         // </summary>
@@ -286,6 +378,66 @@ namespace Monster
             }
 
             mRigidbody2D.position = targetPosition;
+
+            // 한 칸 이동을 완전히 끝낸 후
+            // 현재 위치에서 랜덤 인카운터를 검사합니다.
+            CheckEncounter();
+
+            mIsMoving = false;
+        }
+
+        private IEnumerator JumpToCell(Vector2 landingPosition, int moveVersion)
+        {
+            mIsMoving = true;
+
+            Vector2 startPosition = mRigidbody2D.position;
+            Vector3 originalVisualPosition = mVisual != null ? mVisual.localPosition : Vector3.zero;
+
+            float elapsedTime = 0f;
+
+            // 점프 중에는 걷기 애니메이션을 끕니다.
+            SetMoveAnimation(false);
+
+            while (elapsedTime < mJumpDuration)
+            {
+                if (moveVersion != mMoveVersion)
+                {
+                    if (mVisual != null)
+                    {
+                        mVisual.localPosition = originalVisualPosition;
+                    }
+
+
+                    yield break;
+                }
+
+                elapsedTime += Time.deltaTime;
+
+                float progress = Mathf.Clamp01(elapsedTime / mJumpDuration);
+
+                // Player 본체는 착지 지점까지 직선으로 이동합니다.
+                Vector2 groundPosition = Vector2.Lerp(startPosition, landingPosition, progress);
+
+                mRigidbody2D.MovePosition(groundPosition);
+
+                // 캐릭터 그래픽만 위로 올라갔다 내려옵니다.
+                if (mVisual != null)
+                {
+                    float jumOffset = 4f * mJumpHeight * progress * (1f - progress);
+
+                    mVisual.localPosition = originalVisualPosition + Vector3.up * jumOffset;
+                }
+
+                yield return null;
+            }
+
+            // 착지 지점의 정확한 중앙에 고정합니다.
+            mRigidbody2D.position = landingPosition;
+
+            if (mVisual != null)
+            {
+                mVisual.localPosition = originalVisualPosition;
+            }
 
             mIsMoving = false;
         }

@@ -28,6 +28,8 @@ namespace Monster
         private TilemapManager mTilemapManager;
         private EnCounterManager mEncounterManager;
 
+        private bool mBattleRequested = false;
+
         public TilemapManager TilemapManager
         {
             get
@@ -35,7 +37,7 @@ namespace Monster
                 return mTilemapManager;
             }
         }
-
+        
         public EnCounterManager EncounterManager
         {
             get
@@ -43,6 +45,23 @@ namespace Monster
                 return mEncounterManager;
             }
         }
+
+        public bool IsBattleRequested
+        {
+            get
+            {
+                return mBattleRequested;
+            }
+        }
+
+        // <summary>
+        // Scene이 변경되어도 유지할 Player의 Runtime Data입니다.
+        // </summary>
+        public static PlayerRuntimeData RuntimePlayerData
+        {
+            get;
+            private set;
+        } = new PlayerRuntimeData();
 
         // private EntityComponent entityComponent;
         public override EGameMode GameMode => EGameMode.RPG;
@@ -67,6 +86,35 @@ namespace Monster
             SpawnMap(mMapAssetPath, Vector3.zero);
         }
 
+        public override void Shutdown()
+        {
+            EventComponent eventComponent = GameEntry.GetComponent<EventComponent>();
+
+            if(eventComponent != null)
+            {
+                eventComponent.Unsubscribe(ShowEntitySuccessEventArgs.EventId,
+                    OnShowEntitySuccess);
+
+                eventComponent.Unsubscribe(ShowEntityFailureEventArgs.EventId,
+                    OnShowEntityFailure);
+            }
+
+            mPlayer = null;
+            mGrid   = null;
+
+            mTilemapManager     = null;
+            mEncounterManager   = null;
+
+            mBattleRequested    = false;
+
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+
+            base.Shutdown();
+        }
+
         private void SpawnMap(string assetPath, Vector3 position)
         {
             int id = EntitySerialId.Next();
@@ -84,21 +132,30 @@ namespace Monster
                 id,                             
                 typeof(MapEntity),                                   // 실행할 EntityLogic
                 assetPath,                                           // "Map" 프리팹 Addressable 이름
-                "Map",                                               // Entity Group 이름
+                MapGroupName,                                        // Entity Group 이름
                 new MapData(id, 1, position, Quaternion.identity));  // MapEntity.OnShow로 전달
         }
 
-        private void SpawnCharacter(string assetPath, Vector3 position)
+        private void SpawnCharacter(string assetPath, Vector3 position, Vector2 direction)
         {
             int id = EntitySerialId.Next();
 
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+
+            if (entityComponent == null)
+            {
+                Log.Error("EntityComponent를 찾을 수 없습니다.");
+
+                return;
+            }
+
             // typeof 스크립트를 붙인다.
-            GameEntry.GetComponent<EntityComponent>().ShowEntity(
+            entityComponent.ShowEntity(
                 id,
                 typeof(Player),
                 assetPath,
-                "Player",
-                new PlayerData(id, 1, position));
+                PlayerGroupName,
+                new PlayerData(id, 1, position, direction));
         }
 
         protected override void OnShowEntitySuccess(object sender, GameEventArgs gEvent)
@@ -188,7 +245,32 @@ namespace Monster
             // Map 관련 초기화가 모두 끝난 다음
             // Player를 생성합니다.
             // =========================================
-            SpawnCharacter(mAssetPath, new Vector3(0f, 0f, 10f));
+
+            // 처음 게임을 시작했을 때 사용할 기본 위치입니다.
+            Vector3 spawnPosition = new Vector3(0f, 0f, 10f);
+
+            // 처음 게임을 시작했을 때 바라볼 기본 방향입니다.
+            Vector2 spawnDirecion = Vector2.down;
+
+            // Battle Scene으로 넘어가기 전에 저장했던
+            // Player의 필드 정보가 있는지 확인합니다.
+            if (RuntimePlayerData.mHasSavedFieldState)
+            {
+                // 저장되어 있던 Grid Cell의 정중앙 위치를 구합니다.
+                Vector3 savedCellCenter = mGrid.GetCellCenterWorld(RuntimePlayerData.mCellPosition);
+
+                // 저장된 셀의 중앙을 Player 생성 위치로 사용합니다.
+                spawnPosition = savedCellCenter;
+
+                // 저장된 바라보는 방향도 가져옵니다.
+                spawnDirecion = RuntimePlayerData.mDirection;
+
+                Log.Info($"RPGGame : Player Runtime Load - " +
+                    $"Cell = {RuntimePlayerData.mCellPosition}," +
+                    $"Direction = {RuntimePlayerData.mDirection}");
+            }
+
+            SpawnCharacter(mAssetPath, new Vector3(0f, 0f, 10f), Vector2.down);
         }
 
         // =========================================
@@ -206,7 +288,6 @@ namespace Monster
             }
 
             Log.Info("RPGGame : Player Component 찾기 성공");
-
 
             // =========================================
             // Camera 연결
@@ -234,13 +315,35 @@ namespace Monster
 
             Log.Info("RPGGame : Camera Target Setting Success");
         }
-
-
+        
         protected override void OnShowEntityFailure(object sender, GameEventArgs gEvent)
         {
             var vEvent = (ShowEntityFailureEventArgs)gEvent;
 
             Log.Warning("Show entity failure: {0}", vEvent.ErrorMessage);
+        }
+
+        // <summary>
+        // 필드에서 랜덤 인카운터가 발생했을 때 호출합니다.
+        // </summary>
+        public void RequestBattle()
+        {
+            if (mBattleRequested)
+            {
+                return;
+            }
+
+            Log.Info("RPGGame : Battle Encounter");
+
+            mBattleRequested = true;
+        }
+
+        // <summary>
+        // Battle 전환 요청을 초기화합니다.
+        // <summary>
+        public void ClearBattleRequest()
+        {
+            mBattleRequested = false;
         }
     }
 }

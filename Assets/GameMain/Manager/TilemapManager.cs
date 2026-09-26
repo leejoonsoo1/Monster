@@ -134,6 +134,31 @@ namespace Monster
             return IsWalkable(blockedTileTypes);
         }
 
+        // 지정한 셀에 Hill 타일이 있는지 확인합니다.
+        public bool IsHillTile(Vector3Int cellPosition)
+        {
+            if (mTilemaps == null)
+            {
+                return false;
+            }
+
+            foreach (Tilemap tilemap in mTilemaps)
+            {
+                if (tilemap == null)
+                {
+                    continue;
+                }
+
+                // Tilemap 이름이 Hill이고 해당 셀에 타일이 있는지 확인
+                if (string.Equals(tilemap.gameObject.name, EBlockedTileType.Hill.ToString(), StringComparison.OrdinalIgnoreCase) && tilemap.HasTile(cellPosition))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         // 현재 셀이 수풀인지 확인합니다.
         public bool IsGrassTile(Vector3Int cellPosition)
         {

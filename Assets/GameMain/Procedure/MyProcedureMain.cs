@@ -109,6 +109,19 @@ namespace Monster
             {
                 return;
             }
+
+            if (mGame != null &&
+                mGame.IsBattleRequested)
+            {
+                mGame.ClearBattleRequest();
+
+                Log.Info("MyProcedureMain -> MyProcedureBattle");
+
+                // Main Procedure에서 Battle Procedure로 넘어갑니다.
+                ChangeState<MyProcedureBattle>(procedureOwner);
+
+                return;
+            }
         }
 
         // <summary>
@@ -119,12 +132,8 @@ namespace Monster
         {
             Log.Info("MyProcedureMain : Leave");
 
-            // 등록했던 씬 로드 이벤트를 해제합니다.
-            if (mEventComponent != null)
-            {
-                mEventComponent.Unsubscribe(LoadSceneSuccessEventArgs.EventId, OnLoadSceneSuccess);
-                mEventComponent.Unsubscribe(LoadSceneFailureEventArgs.EventId, OnLoadSceneFailure);
-            }
+            mEventComponent.Unsubscribe(LoadSceneSuccessEventArgs.EventId, OnLoadSceneSuccess);
+            mEventComponent.Unsubscribe(LoadSceneSuccessEventArgs.EventId, OnLoadSceneFailure);
 
             // 게임 종료가 아니라 다른 프로시저로 이동하는 경우
             // Main 씬이 로드되어 있으면 언로드 합니다.
@@ -133,9 +142,14 @@ namespace Monster
                 mSceneComponent.UnloadScene(mMainSceneAssetName);
             }
 
+            // RPGGame에서 등록했던 이벤트를 정리합니다.
+            mGame?.Shutdown();
+            mGame = null;
+
             // 사용하던 객체와 상태를 초기화합니다.
             mSceneLoaded        = false;
             mGameInitialized    = false;
+
             mEventComponent     = null;
             mSceneComponent     = null;
 
