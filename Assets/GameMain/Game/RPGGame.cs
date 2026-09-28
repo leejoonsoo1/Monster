@@ -270,7 +270,7 @@ namespace Monster
                     $"Direction = {RuntimePlayerData.mDirection}");
             }
 
-            SpawnCharacter(mAssetPath, new Vector3(0f, 0f, 10f), Vector2.down);
+            SpawnCharacter(mAssetPath, spawnPosition, Vector2.down);
         }
 
         // =========================================

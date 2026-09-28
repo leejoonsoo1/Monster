@@ -11,7 +11,7 @@ namespace Monster
         {
             Ground1     = 0,
             Ground2,
-            Grace, 
+            Grass, 
             Tree3,
             Building3,
             LightHouse2,
@@ -187,7 +187,7 @@ namespace Monster
                 }
 
                 // 현재 enum 이름이 Grace이므로 Grace로 검사
-                if (walkableTileType == EWalkableTileType.Grace)
+                if (walkableTileType == EWalkableTileType.Grass)
                 {
                     return true;
                 }

@@ -63,6 +63,10 @@ namespace Monster
             {
                 return;
             }
+
+            Log.Info("MyProcedureBattle -> MyProcedureMain");
+
+            ChangeState<MyProcedureMain>(procedureOwner);
         }
 
         protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)

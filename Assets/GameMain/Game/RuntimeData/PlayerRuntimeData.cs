@@ -27,7 +27,7 @@ namespace Monster
         // </summary>
         public void SaveFieldState(Vector3Int cellPosition, Vector2 direction)
         {
-            cellPosition = cellPosition;
+            mCellPosition = cellPosition;
 
             if (direction != Vector2.zero)
             {
