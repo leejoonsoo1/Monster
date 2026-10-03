@@ -8,7 +8,7 @@ namespace Monster
     [Serializable]
     public class PlayerData : TargetTableObjectData
     {
-        //[SerializeField] private int mMaxHP = 100;
+        // [SerializeField] private int mMaxHP = 100;
         [SerializeField] private float mMoveSpeed = 9.5f;
 
         // Player가 생성될 때 바라볼 방향입니다.

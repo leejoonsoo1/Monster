@@ -25,8 +25,8 @@ namespace Monster
         [SerializeField] private Transform mVisual;
 
         private Rigidbody2D mRigidbody2D;
-        private PlayerData mPlayerData;
-        private Animator mAnimator;
+        private PlayerData  mPlayerData;
+        private Animator    mAnimator;
 
         // 셀 좌표와 셀 중앙을 계산할 기준 Grid입니다
         private Grid mGrid;
@@ -335,7 +335,7 @@ namespace Monster
 
             //인카운터가 발생하지 않았다면
             // 그대로 필드 이동을 계속합니다.
-            if (!isEncounter)
+            if (isEncounter != true)
             {
                 return;
             }
@@ -379,6 +379,12 @@ namespace Monster
 
             mRigidbody2D.position = targetPosition;
 
+            // 한 칸 이동이 끝날 때마다 현재 Tilemap 목록을 갱신합니다.
+            if (mTilemapManager != null)
+            {
+                mTilemapManager.RefreshTilemaps();
+            }
+
             // 한 칸 이동을 완전히 끝낸 후
             // 현재 위치에서 랜덤 인카운터를 검사합니다.
             CheckEncounter();
@@ -407,13 +413,12 @@ namespace Monster
                         mVisual.localPosition = originalVisualPosition;
                     }
 
-
                     yield break;
                 }
 
-                elapsedTime += Time.deltaTime;
+                elapsedTime     += Time.deltaTime;
 
-                float progress = Mathf.Clamp01(elapsedTime / mJumpDuration);
+                float progress  = Mathf.Clamp01(elapsedTime / mJumpDuration);
 
                 // Player 본체는 착지 지점까지 직선으로 이동합니다.
                 Vector2 groundPosition = Vector2.Lerp(startPosition, landingPosition, progress);

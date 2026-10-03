@@ -25,8 +25,16 @@ namespace Monster
         private string mMapAssetPath            = "Map";
         private const string MapGroupName       = "Map";
 
+        // 현재 지역에 대응되는 Battle Background를 관리합니다.
+        private string mBattleMapName           = "Route";
+
         private TilemapManager mTilemapManager;
         private EnCounterManager mEncounterManager;
+
+        // 맵에 따른 Battle Background를 관리합니다.
+        private BattleBackgroundManager mBattleBackgroundManager;
+        // 현재 Player가 위치한 Map 이름입니다.
+        private string mCurrentMapName;
 
         private bool mBattleRequested = false;
 
@@ -43,6 +51,30 @@ namespace Monster
             get
             {
                 return mEncounterManager;
+            }
+        }
+
+        public BattleBackgroundManager BattleBackgroundManager
+        {
+            get
+            {
+                return mBattleBackgroundManager;
+            }
+        }
+
+        public string BattleMapName
+        {
+            get
+            {
+                return mBattleMapName;
+            }
+        }
+
+        public string CurrentMapName
+        {
+            get
+            {
+                return mMapAssetPath;
             }
         }
 
@@ -70,6 +102,9 @@ namespace Monster
         {
             base.Initialize();
             Instance = this;
+
+            mBattleBackgroundManager = new BattleBackgroundManager();
+            mBattleBackgroundManager.Initialize();
 
             EventComponent eventComponent = GameEntry.GetComponent<EventComponent>();
 
@@ -99,13 +134,20 @@ namespace Monster
                     OnShowEntityFailure);
             }
 
+            // BattleBackgroundManager 내부 데이터를 먼저 정리합니다.
+            if (mBattleBackgroundManager != null)
+            {
+                mBattleBackgroundManager.shutdown();
+                mBattleBackgroundManager = null;
+            }
+
             mPlayer = null;
             mGrid   = null;
 
-            mTilemapManager     = null;
-            mEncounterManager   = null;
+            mTilemapManager             = null;
+            mEncounterManager           = null;
 
-            mBattleRequested    = false;
+            mBattleRequested            = false;
 
             if (Instance == this)
             {
@@ -117,6 +159,9 @@ namespace Monster
 
         private void SpawnMap(string assetPath, Vector3 position)
         {
+            // 현재 생성하는 Map을 현재 Map 이름으로 저장합니다.
+            mMapAssetPath = assetPath;
+
             int id = EntitySerialId.Next();
 
             EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();

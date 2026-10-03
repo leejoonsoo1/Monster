@@ -105,9 +105,18 @@ namespace Monster
             base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
 
             // Main 씬이 로드되지 않았다면 게임 로직을 처리하지 않습니다.
-            if (!mSceneLoaded)
+            if (mSceneLoaded != true)
             {
                 return;
+            }
+
+            // 테스트용 C키를 누르면 Battle 전환을 한다.
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                if (mGame != null)
+                {
+                    mGame.RequestBattle();
+                }
             }
 
             if (mGame != null &&
@@ -133,11 +142,11 @@ namespace Monster
             Log.Info("MyProcedureMain : Leave");
 
             mEventComponent.Unsubscribe(LoadSceneSuccessEventArgs.EventId, OnLoadSceneSuccess);
-            mEventComponent.Unsubscribe(LoadSceneSuccessEventArgs.EventId, OnLoadSceneFailure);
+            mEventComponent.Unsubscribe(LoadSceneFailureEventArgs.EventId, OnLoadSceneFailure);
 
             // 게임 종료가 아니라 다른 프로시저로 이동하는 경우
             // Main 씬이 로드되어 있으면 언로드 합니다.
-            if (!isShutdown && mSceneComponent != null && mSceneComponent.SceneIsLoaded(mMainSceneAssetName))
+            if (isShutdown != true && mSceneComponent != null && mSceneComponent.SceneIsLoaded(mMainSceneAssetName))
             {
                 mSceneComponent.UnloadScene(mMainSceneAssetName);
             }
@@ -153,8 +162,8 @@ namespace Monster
             mEventComponent     = null;
             mSceneComponent     = null;
 
-            //mPlayer?.Shutdown();
-            //mGame = null;
+            // mPlayer?.Shutdown();
+            // mGame = null;
 
             base.OnLeave(procedureOwner, isShutdown);
         }
@@ -236,7 +245,7 @@ namespace Monster
             }
 
             // Main 씬이 준비되지 않았다면 초기화하지 않습니다.
-            if (!mSceneLoaded)
+            if (mSceneLoaded != true)
             {
                 return;
             }

@@ -19,7 +19,6 @@ namespace Monster
             mGrid = FindAnyObjectByType<Grid>();
         }
 
-
         private void OnTriggerEnter2D(Collider2D collision)
         {
             Player player = collision.GetComponent<Player>();
@@ -54,7 +53,7 @@ namespace Monster
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
 
-            if (!mIsPlayerInRange)
+            if (mIsPlayerInRange != true)
             {
                 return;
             }

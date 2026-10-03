@@ -20,13 +20,13 @@ namespace Monster
             }
 
             // 현재 위치가 수풀이 아니면 인카운터 발생 안 함
-            if (!mTilemapManager.IsGrassTile(cellPosition))
+            if (mTilemapManager.IsGrassTile(cellPosition) != true)
             {
                 return false;
             }
 
             // 수풀이라면 확률 판정
-            return Random.value <= EnCounterChance;
+            return true;//Random.value <= EnCounterChance;
         }
 
         public void Shutdown()

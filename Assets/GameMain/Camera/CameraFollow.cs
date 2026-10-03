@@ -16,14 +16,14 @@ namespace Monster
         private void LateUpdate()
         {
             // 현재 스크립트가 실제로 실행되는지 확인
-            //Debug.Log("CameraFollow LateUpdate 실행");
+            // Debug.Log("CameraFollow LateUpdate 실행");
 
             if (mTarget == null)
                 return;
 
             Vector3 targetPosition = mTarget.position + mOffset;
 
-            //Vector3.Lerp(transform.position, targetPosition, followSpeed * Time.deltaTime);
+            // Vector3.Lerp(transform.position, targetPosition, followSpeed * Time.deltaTime);
             transform.position = new Vector3(mTarget.position.x, mTarget.position.y, -10f);
         }
     }

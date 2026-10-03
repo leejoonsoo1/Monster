@@ -30,8 +30,8 @@ namespace Monster
 
             Log.Info("MyProcedureIntro Enter");
 
-            mSceneLoaded = false;
-            mChangeToMain = false;
+            mSceneLoaded    = false;
+            mChangeToMain   = false;
 
             // 현재 프로젝트의 GameEntry는 Eevent, Scene 프로퍼티가 없으므로
             // GetComponent<T>()로 직접 컴포넌트를 가져와야 함
@@ -63,12 +63,11 @@ namespace Monster
             base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
 
             // 씬이 아직 로드되지 않았으면 아무것도 하지 않음
-            if (!mSceneLoaded)
+            if (mSceneLoaded != true)
             {
                 return;
             }
 
-            // 테스트용:
             // 아무 키나 누르면 Main 프로시저로 이동
             if (Input.anyKeyDown)
             {
