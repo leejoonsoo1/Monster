@@ -28,6 +28,10 @@ namespace Monster
         // 현재 지역에 대응되는 Battle Background를 관리합니다.
         private string mBattleMapName           = "Route";
 
+        // UGF에서 생성한 Entity를 나중에 제거하기 위해 ID를 저장합니다.
+        private int mPlayerEntityId = 0;
+        private int mMapEntityId = 0;
+
         private TilemapManager mTilemapManager;
         private EnCounterManager mEncounterManager;
 
@@ -134,18 +138,51 @@ namespace Monster
                     OnShowEntityFailure);
             }
 
-            // BattleBackgroundManager 내부 데이터를 먼저 정리합니다.
+            // 생생했던 Player와 Map Entity를 실제로 제거합니다.
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+
+            if (entityComponent != null)
+            {
+                if (mPlayerEntityId > 0 &&
+                    entityComponent.HasEntity(mPlayerEntityId) == true)
+                {
+                    entityComponent.HideEntity(mPlayerEntityId);
+                }
+
+                if (mMapEntityId > 0 &&
+                    entityComponent.HasEntity(mMapEntityId) == true)
+                {
+                    entityComponent.HideEntity(mMapEntityId);
+                }
+            }
+
+            // Enity ID를 초기화합니다.
+            mPlayerEntityId = 0;
+            mMapEntityId    = 0;
+
+            // Battle Background Manager를 정리합니다.
             if (mBattleBackgroundManager != null)
             {
-                mBattleBackgroundManager.shutdown();
+                mBattleBackgroundManager.Shutdown();
                 mBattleBackgroundManager = null;
+            }
+
+            // BattleBackgroundManager 내부 데이터를 먼저 정리합니다.
+            if (mEncounterManager != null)
+            {
+                mEncounterManager.Shutdown();
+                mEncounterManager = null;
+            }
+
+            // Tilemap Manager를 정리합니다.
+            if (mTilemapManager != null)
+            {
+                mTilemapManager.Shutdown();
+                mTilemapManager = null;
             }
 
             mPlayer = null;
             mGrid   = null;
-
-            mTilemapManager             = null;
-            mEncounterManager           = null;
 
             mBattleRequested            = false;
 
@@ -163,6 +200,8 @@ namespace Monster
             mMapAssetPath = assetPath;
 
             int id = EntitySerialId.Next();
+
+            mMapEntityId = id;
 
             EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
 
@@ -184,6 +223,8 @@ namespace Monster
         private void SpawnCharacter(string assetPath, Vector3 position, Vector2 direction)
         {
             int id = EntitySerialId.Next();
+
+            mPlayerEntityId = id;
 
             EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
 
@@ -389,6 +430,63 @@ namespace Monster
         public void ClearBattleRequest()
         {
             mBattleRequested = false;
+        }
+
+        public void ShutdownField()
+        {
+            // GameFramework의 EntityComponent를 가져옵니다.
+            // 현재 필드에서 생성되어 있는 Entity들을 정리할 때 사용합니다.
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+
+            // EntityComponent가 없다면
+            // Player와 Map Entity를 제거할 수 없으므로 종료합니다.
+            if (entityComponent == null)
+            {
+                Log.Error("RPGGame : EntityComponent를 찾을 수 없습니다.");
+
+                return;
+            }
+
+            // Battle로 넘어가는 시점에는
+            // 현재 필드에서 로드되어 있는 Entity들을 모두 숨깁니다.
+            // 현재 프로젝트에서는 Main 필드에서
+            // Player와 Map Entity를 UGF EntityComponent로 생성하고 있으므로
+            // 두 Entity를 확실하게 정리하기 위해 전체 Hide를 사용합니다.
+            entityComponent.HideAllLoadedEntities();
+
+            Log.Info("RPGGame : Field Entity 전체 제거 요청");
+
+            // 기존에 저장해두었던 Player Entity Id를 초기화합니다.
+            mPlayerEntityId = 0;
+
+            // 기존에 저장해두었던 Map Entity Id를 초기화합니다.
+            mMapEntityId = 0;
+
+            // 필드에서 사용하던 EncounterManager를 정리합니다.
+            if (mEncounterManager != null)
+            {
+                mEncounterManager.Shutdown();
+                mEncounterManager = null;
+            }
+
+            // 필드에서 사용하던 TilemapManager를 정리합니다.
+            if (mTilemapManager != null)
+            {
+                mTilemapManager.Shutdown();
+                mTilemapManager = null;                
+            }
+
+            // 현재 Player 참조를 초기화합니다.
+            mPlayer = null;
+
+            // 현재 Grid 참조를 초기화합니다.
+            mGrid   = null;
+
+            // Battle 전환 요청 상태를 초기화합니다.
+            mBattleRequested = false;
+
+
+            Log.Info("RPGGame : Field Shutdown Complete");
         }
     }
 }

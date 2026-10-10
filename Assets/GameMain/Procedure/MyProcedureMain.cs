@@ -111,7 +111,7 @@ namespace Monster
             }
 
             // 테스트용 C키를 누르면 Battle 전환을 한다.
-            if (Input.GetKeyDown(KeyCode.C))
+            if (Input.GetKeyDown(KeyCode.C) == true)
             {
                 if (mGame != null)
                 {
@@ -141,30 +141,43 @@ namespace Monster
         {
             Log.Info("MyProcedureMain : Leave");
 
-            mEventComponent.Unsubscribe(LoadSceneSuccessEventArgs.EventId, OnLoadSceneSuccess);
-            mEventComponent.Unsubscribe(LoadSceneFailureEventArgs.EventId, OnLoadSceneFailure);
-
-            // 게임 종료가 아니라 다른 프로시저로 이동하는 경우
-            // Main 씬이 로드되어 있으면 언로드 합니다.
-            if (isShutdown != true && mSceneComponent != null && mSceneComponent.SceneIsLoaded(mMainSceneAssetName))
+            // Main Scene 관련 이벤트 구독을 해제합니다.
+            if (mEventComponent != null)
             {
-                mSceneComponent.UnloadScene(mMainSceneAssetName);
+                // Main Scene Load 성공 이벤트를 해제합니다.
+                mEventComponent.Unsubscribe(LoadSceneSuccessEventArgs.EventId, OnLoadSceneSuccess);
+
+                // Main Scene Load 실패 이벤트를 해제합니다.
+                mEventComponent.Unsubscribe(LoadSceneFailureEventArgs.EventId, OnLoadSceneFailure);
             }
 
-            // RPGGame에서 등록했던 이벤트를 정리합니다.
-            mGame?.Shutdown();
-            mGame = null;
+            // RPGGame에서 생생한 Player / Map Entity와
+            // 등록했던 이벤트 및 Manager를 먼저 정리합니다.
+            if (mGame != null)
+            {
+                mGame.ShutdownField();
+            }
+
+            // 게임 자체가 종료되는 상황이 아니라면
+            // 현재 Main Scene을 언로드합니다.
+            if (isShutdown != true && 
+                mSceneComponent != null && 
+                mSceneComponent.SceneIsLoaded(mMainSceneAssetName) == true)
+            {
+                Log.Info("Main Scene Unload");
+
+                mSceneComponent.UnloadScene(mMainSceneAssetName);
+            }
 
             // 사용하던 객체와 상태를 초기화합니다.
             mSceneLoaded        = false;
             mGameInitialized    = false;
 
+            // Component 참조를 초기화합니다.
             mEventComponent     = null;
             mSceneComponent     = null;
 
-            // mPlayer?.Shutdown();
-            // mGame = null;
-
+            // 부모 Procedure의 OnLeave를 호출합니다.
             base.OnLeave(procedureOwner, isShutdown);
         }
 

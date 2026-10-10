@@ -22,8 +22,7 @@ namespace Monster
         }
 
         // <summary>
-        // Battle Scene으로 넘어가기 전에
-        // 현재 Player의 필드 상태를 저장합니다.
+        // Battle Scene으로 넘어가기 전에 현재 Player의 필드 상태를 저장합니다.
         // </summary>
         public void SaveFieldState(Vector3Int cellPosition, Vector2 direction)
         {

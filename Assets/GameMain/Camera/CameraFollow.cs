@@ -15,8 +15,7 @@ namespace Monster
 
         private void LateUpdate()
         {
-            // 현재 스크립트가 실제로 실행되는지 확인
-            // Debug.Log("CameraFollow LateUpdate 실행");
+            // 현재 스크립트가 실제로 실행되는지 확인 Debug.Log("CameraFollow LateUpdate 실행");
 
             if (mTarget == null)
                 return;

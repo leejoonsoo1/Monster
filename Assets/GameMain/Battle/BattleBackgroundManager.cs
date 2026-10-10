@@ -35,7 +35,7 @@ namespace Monster
             return backgroundAssetName;
         }
 
-        public void shutdown()
+        public void Shutdown()
         {
             mBackgroundPaths.Clear();
         }
