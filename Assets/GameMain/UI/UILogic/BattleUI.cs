@@ -18,6 +18,10 @@ namespace Monster
         [SerializeField]
         private RectTransform mPlayerStatusRoot;
 
+        // 하단 명령 UI 영역입니다.
+        [SerializeField]
+        private RectTransform mBottomRoot;
+
         [SerializeField]
         private Image mEnemyHPFill;
 
@@ -60,7 +64,6 @@ namespace Monster
                 // 왼쪽 상단에서의 위치
                 mEnemyStatusRoot.anchoredPosition   = new Vector2(0f, -80f);
                 mEnemyStatusRoot.sizeDelta          = new Vector2(600f, 160f);
-                mEnemyStatusRoot.localScale         = Vector3.one;
             }
 
             // 내 체력 UI 배치
@@ -72,9 +75,46 @@ namespace Monster
                 mPlayerStatusRoot.pivot     = new Vector2(1f, 0f);
 
                 // 오른쪽 하단에서의 위치
-                mPlayerStatusRoot.anchoredPosition  = new Vector2(0f, 30f);
+                mPlayerStatusRoot.anchoredPosition  = new Vector2(0f, 300f);
                 mPlayerStatusRoot.sizeDelta         = new Vector2(600f, 180f);
                 mPlayerStatusRoot.localScale        = UnityEngine.Vector3.one; 
+            }
+
+            if (mBottomRoot != null)
+            {
+                mBottomRoot.anchorMin   = new Vector2(0.5f, 1f);
+                mBottomRoot.anchorMax   = new Vector2(0.5f, 1f);
+                mBottomRoot.pivot       = new Vector2(0.5f, 1f);
+
+                mBottomRoot.anchoredPosition    = new Vector2(0f, -810f);
+                mBottomRoot.sizeDelta           = new Vector2(1440f, 270f);
+            }
+
+            Transform enemyStatus1 = transform.Find("EnemyStatus1");
+            Transform enemyStatus2 = transform.Find("EnemyStatus2");
+
+            Transform playerStatus1 = transform.Find("PlayerStatus1");
+            Transform playerStatus2 = transform.Find("PlayerStatus2");
+
+            // 상대 몬스터 1 체력바 활성화
+            if (enemyStatus1 != null)
+            {
+                enemyStatus1.gameObject.SetActive(true);
+            }
+
+            if (enemyStatus2 != null)
+            {
+                enemyStatus2.gameObject.SetActive(false);
+            }
+
+            if (playerStatus1 != null)
+            {
+                playerStatus1.gameObject.SetActive(true);
+            }
+
+            if (playerStatus2 != null)
+            {
+                playerStatus2.gameObject.SetActive(false);
             }
 
             // HP 게이지 초기화
@@ -83,6 +123,8 @@ namespace Monster
 
             // 현재는 데이터 연동 전이므로 두 체력바를 100%로 표시합니다.
             SetHP(100, 100, 70, 70);
+
+            Log.Info("BattleUI : Single Battle UI 활성화 완료");
         }
 
         // HP 게이지의 표시 방식을 설정합니다
