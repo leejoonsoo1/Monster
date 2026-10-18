@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8707279828963899795}
   - component: {fileID: 6982526503943296128}
+  - component: {fileID: -8976170390122420275}
   m_Layer: 0
   m_Name: BattleUI
   m_TagString: Untagged
@@ -47,6 +48,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f627c32af5133a24f829e711fafe42fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UnityGameFramework.Runtime.UIForm
+--- !u!114 &-8976170390122420275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 494658108542566400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 731760553a99b284b89f2eb2d062cb9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Monster.BattleUI
+  mEnemyStatusRoot: {fileID: 2769526240932916072}
+  mPlayerStatusRoot: {fileID: 6383837235789856747}
+  mBottomRoot: {fileID: 126639178225920550}
+  mEnemyStatus1: {fileID: 960726425095950612}
+  mPlayerStatus1: {fileID: 4064947820585057600}
 --- !u!1 &1296413748364958886
 GameObject:
   m_ObjectHideFlags: 0
@@ -91,7 +109,7 @@ GameObject:
   - component: {fileID: 2222224346207420489}
   - component: {fileID: 4513608692095014234}
   - component: {fileID: 5937217370250186992}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: PlayerStatus2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -316,7 +334,7 @@ GameObject:
   - component: {fileID: 4064947820585057600}
   - component: {fileID: 1098506629354618723}
   - component: {fileID: 7372058548276245444}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: PlayerStatus1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -409,8 +427,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6572391148691047496}
   - {fileID: 960726425095950612}
+  - {fileID: 6572391148691047496}
   m_Father: {fileID: 8707279828963899795}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2070547916917322066

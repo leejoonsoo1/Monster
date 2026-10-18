@@ -1,33 +1,22 @@
+
 using UnityEngine;
-using UnityEngine.UI;
 using UnityGameFramework.Runtime;
 
 namespace Monster
 {
     public class BattleUI : UIFormLogic
     {
-        // Battle UI의 크기입니다.
-        private const float mWidth  = 1440f;
-        private const float mHeight = 810f;
+        private const float mWidth = 1440f;
+        private const float mHeight = 1080f;
 
-        // 상대 몬스터 체력 UI입니다.
-        [SerializeField]
-        private RectTransform mEnemyStatusRoot;
+        [SerializeField] private Transform mEnemyStatusRoot;
+        [SerializeField] private Transform mPlayerStatusRoot;
+        [SerializeField] private Transform mBottomRoot;
 
-        // 내 몬스터 체력 UI입니다.
-        [SerializeField]
-        private RectTransform mPlayerStatusRoot;
-
-        // 하단 명령 UI 영역입니다.
-        [SerializeField]
-        private RectTransform mBottomRoot;
-
-        [SerializeField]
-        private Image mEnemyHPFill;
-
-        // 내 몬스터 체력 UI입니다.
-        [SerializeField]
-        private Image mPlayerHPFill;
+        [SerializeField] private RectTransform mEnemyStatus1;
+        [SerializeField] private RectTransform mEnemyStatus2;
+        [SerializeField] private RectTransform mPlayerStatus1;
+        [SerializeField] private RectTransform mPlayerStatus2;
 
         protected internal override void OnOpen(object userData)
         {
@@ -35,133 +24,144 @@ namespace Monster
 
             Log.Info("BattleUI : Open");
 
-            RectTransform rectTransform = transform as RectTransform;
+            RectTransform rootRect = transform as RectTransform;
 
-            if (rectTransform == null)
+            if (rootRect != null)
             {
-                Log.Error("BattleUI : RectTransform을 찾을 수 없습니다.");
+                rootRect.anchorMin          = new Vector2(0.5f, 1f);
+                rootRect.anchorMax          = new Vector2(0.5f, 1f);
+                rootRect.pivot              = new Vector2(0.5f, 1f);
+                rootRect.anchoredPosition   = Vector2.zero;
+                rootRect.sizeDelta          = new Vector2(mWidth, mHeight);
+                rootRect.localScale         = Vector3.one;
+            }
+            else
+            {
+                RectTransform parentRect =
+                    transform.parent as RectTransform;
 
-                return;
+                if (parentRect != null)
+                {
+                    float centerX =
+                        (0.5f - parentRect.pivot.x) *
+                        parentRect.rect.width;
+
+                    float topY =
+                        (1f - parentRect.pivot.y) *
+                        parentRect.rect.height;
+
+                    transform.localPosition =
+                        new Vector3(centerX, topY, 0f);
+                }
+                else
+                {
+                    Log.Warning(
+                        "BattleUI : 부모 RectTransform을 찾지 못했습니다.");
+                }
+
+                transform.localScale = Vector3.one;
             }
 
-            // BattleBackgroundUI와 같은 크기와 위치로 설정합니다.
-            rectTransform.anchorMin = new Vector2(0.5f, 1f);
-            rectTransform.anchorMax = new Vector2(0.5f, 1f);
-            rectTransform.pivot     = new Vector2(0.5f, 1f);
+            SetUIRect(mEnemyStatusRoot,     new Vector2(0f, 1f),    new Vector2(0f, 1f),    new Vector2(0f, -80f),  new Vector2(600f, 160f),    new Vector2(-mWidth * 0.5f, -80f));
+            SetUIRect(mPlayerStatusRoot,    new Vector2(1f, 0f),    new Vector2(1f, 0f),    new Vector2(0f, 300f),  new Vector2(600f, 180f),    new Vector2(mWidth * 0.5f, -mHeight + 300f));
+            SetUIRect(mBottomRoot,          new Vector2(0.5f, 1f),  new Vector2(0.5f, 1f),  new Vector2(0f, -810f), new Vector2(1440f, 270f),   new Vector2(0f, -810f));
 
-            rectTransform.anchoredPosition  = Vector2.zero;
-            rectTransform.sizeDelta         = new Vector2(mWidth, mHeight);
-            rectTransform.localScale        = Vector3.one;
+            // 상대 체력바를 왼쪽 상단 영역의 가운데에 배치합니다.
+            SetUIRect(mEnemyStatus1, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 120f), new Vector2(300f, -80f));
 
-            // 상대 체력 UI 배치
+            // 아군 체력바를 오른쪽 하단 영역의 가운데에 배치합니다.
+            SetUIRect(mPlayerStatus1, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 120f), new Vector2(-300f, 90f));
+
+            SetStatusVisible(mEnemyStatus1,     true);
+            SetStatusVisible(mEnemyStatus2,     false);
+            SetStatusVisible(mPlayerStatus1,    true);
+            SetStatusVisible(mPlayerStatus2,    false);
+
+            // Inspector 연결 없이 부모 Root에서 2번 상태창을 찾습니다.
+            Transform enemyStatus2  = null;
+            Transform playerStatus2 = null;
+
             if (mEnemyStatusRoot != null)
             {
-                // 왼쪽 상단 기준
-                mEnemyStatusRoot.anchorMin  = new Vector2(0f, 1f);
-                mEnemyStatusRoot.anchorMax  = new Vector2(0f, 1f);
-                mEnemyStatusRoot.pivot      = new Vector2(0f, 1f);
-
-                // 왼쪽 상단에서의 위치
-                mEnemyStatusRoot.anchoredPosition   = new Vector2(0f, -80f);
-                mEnemyStatusRoot.sizeDelta          = new Vector2(600f, 160f);
+                enemyStatus2 = mEnemyStatusRoot.Find("EnemyStatus2");
             }
 
-            // 내 체력 UI 배치
             if (mPlayerStatusRoot != null)
             {
-                // 오른쪽 하단 기준
-                mPlayerStatusRoot.anchorMin = new Vector2(1f, 0f);
-                mPlayerStatusRoot.anchorMax = new Vector2(1f, 0f);
-                mPlayerStatusRoot.pivot     = new Vector2(1f, 0f);
-
-                // 오른쪽 하단에서의 위치
-                mPlayerStatusRoot.anchoredPosition  = new Vector2(0f, 300f);
-                mPlayerStatusRoot.sizeDelta         = new Vector2(600f, 180f);
-                mPlayerStatusRoot.localScale        = UnityEngine.Vector3.one; 
+                playerStatus2 = mPlayerStatusRoot.Find("PlayerStatus2");
             }
 
-            if (mBottomRoot != null)
+            // 싱글 배틀에서는 2번 상태창을 비활성화합니다.
+            SetStatusVisible(enemyStatus2,  false);
+            SetStatusVisible(playerStatus2, false);
+
+            // 2번 상태창을 찾지 못하면 경로를 출력합니다.
+            if (enemyStatus2 == null)
             {
-                mBottomRoot.anchorMin   = new Vector2(0.5f, 1f);
-                mBottomRoot.anchorMax   = new Vector2(0.5f, 1f);
-                mBottomRoot.pivot       = new Vector2(0.5f, 1f);
-
-                mBottomRoot.anchoredPosition    = new Vector2(0f, -810f);
-                mBottomRoot.sizeDelta           = new Vector2(1440f, 270f);
+                Log.Warning("BattleUI : EnemyStatus2를 찾을 수 없습니다.");
             }
 
-            Transform enemyStatus1 = transform.Find("EnemyStatus1");
-            Transform enemyStatus2 = transform.Find("EnemyStatus2");
-
-            Transform playerStatus1 = transform.Find("PlayerStatus1");
-            Transform playerStatus2 = transform.Find("PlayerStatus2");
-
-            // 상대 몬스터 1 체력바 활성화
-            if (enemyStatus1 != null)
+            if (playerStatus2 == null)
             {
-                enemyStatus1.gameObject.SetActive(true);
+                Log.Warning("BattleUI : PlayerStatus2를 찾을 수 없습니다.");
             }
-
-            if (enemyStatus2 != null)
-            {
-                enemyStatus2.gameObject.SetActive(false);
-            }
-
-            if (playerStatus1 != null)
-            {
-                playerStatus1.gameObject.SetActive(true);
-            }
-
-            if (playerStatus2 != null)
-            {
-                playerStatus2.gameObject.SetActive(false);
-            }
-
-            // HP 게이지 초기화
-            InitializeHPBar(mEnemyHPFill);
-            InitializeHPBar(mPlayerHPFill);
-
-            // 현재는 데이터 연동 전이므로 두 체력바를 100%로 표시합니다.
-            SetHP(100, 100, 70, 70);
 
             Log.Info("BattleUI : Single Battle UI 활성화 완료");
         }
 
-        // HP 게이지의 표시 방식을 설정합니다
-        private void InitializeHPBar(Image hpFill)
+        private void SetUIRect(Transform target, Vector2 anchor, Vector2 pivot, Vector2 anchoredPosition, Vector2 size, Vector2 localPosition)
         {
-            if (hpFill == null)
+            if (target == null)
             {
-                Log.Warning("BattleUI : HP Fill Image가 연결되지 않았습니다.");
-
                 return;
             }
 
-            // HP가 줄어들 때 이미지가 왼쪽부터 남도록 설정합니다.
-            hpFill.type         = Image.Type.Filled;
-            hpFill.fillMethod   = Image.FillMethod.Horizontal;
-            hpFill.fillOrigin   = (int)Image.OriginHorizontal.Left;
+            RectTransform rect          = target as RectTransform;
+            RectTransform parentRect    = target.parent as RectTransform;
 
-            // 처음에는 체력을 가득 체웁니다.
-            hpFill.fillAmount = 1f;
+            if (rect != null)
+            {
+                rect.pivot = pivot;
+                rect.sizeDelta = size;
+
+                if (parentRect != null)
+                {
+                    rect.anchorMin          = anchor;
+                    rect.anchorMax          = anchor;
+                    rect.anchoredPosition   = anchoredPosition;
+                }
+                else
+                {
+                    rect.localPosition = new Vector3(localPosition.x, localPosition.y, 0f);
+                }
+            }
+            else
+            {
+                // 일반 Transform에도 위치를 실제 적용합니다.
+                target.localPosition = new Vector3(localPosition.x, localPosition.y, 0f);
+            }
+
+            // RectTransform과 Transform 모두 Scale을 초기화합니다.
+            target.localScale = Vector3.one;
         }
 
-        // 상대와 아군의 현재 HP를 UI에 반영합니다.
+        // 중복되어 있던 SetStatusVisible()을 하나로 통합했습니다.
+        private void SetStatusVisible(Transform status, bool isVisible)
+        {
+            if (status == null)
+            {
+                return;
+            }
+
+            if (status.gameObject.activeSelf != isVisible)
+            {
+                status.gameObject.SetActive(isVisible);
+            }
+        }
+
+        // HP 게이지 Image 연결 전이므로 기존 빈 함수를 유지합니다.
         public void SetHP(int enemyCurrentHP, int enemyMaxHP, int playerCurrentHP, int playerMaxHP)
         {
-            if (mEnemyHPFill != null && enemyMaxHP > 0)
-            {
-                float enemyHPRatio = Mathf.Clamp01((float)enemyCurrentHP / enemyMaxHP);
-
-                mEnemyHPFill.fillAmount = enemyHPRatio;
-            }
-
-            if (mPlayerHPFill != null && playerMaxHP > 0)
-            {
-                float playerHPRatio = Mathf.Clamp01((float)playerCurrentHP / playerMaxHP);
-
-                mPlayerHPFill.fillAmount = playerHPRatio;
-            }
         }
 
         protected internal override void OnClose(bool isShutdown, object userData)
