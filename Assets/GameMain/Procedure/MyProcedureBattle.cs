@@ -11,10 +11,11 @@ namespace Monster
 
         // UI Component에 등록한 Battle UI Group 이름입니다.
         private const string mBattleUIGroupName = "Battle";
+        private const string mBattleUIAssetName = "BattleUI";
+
         private const string mBattleBackgroundUIGroupName = "BattleBackground";
 
         // Battle에서 항상 사용하는 하단 공통 UI Form입니다.
-        private const string mBattleUIAssetName = "BattleUI";
 
         private EventComponent mEventComponent;
         private SceneComponent mSceneComponent;
@@ -44,10 +45,10 @@ namespace Monster
             mBattleFinished = false;
 
             // 현재 열려 있는 Battle Background UI의 SerialId를 초기화합니다
-            mBattleBackgroundSerialId = 0;
+            mBattleBackgroundSerialId   = 0;
 
             // BattleUI SerialiId를 초기화합니다.
-            mBattleUISerialId = 0;
+            mBattleUISerialId           = 0;
 
             // GameFramework의 EventComponent를 가져옵니다.
             mEventComponent = GameEntry.GetComponent<EventComponent>();
@@ -112,16 +113,16 @@ namespace Monster
             }
 
             // Battle Scene Load 성공 이벤트를 등록합니다.
-            mEventComponent.Subscribe(LoadSceneSuccessEventArgs.EventId, OnLoadSceneSuccess);
+            mEventComponent.Subscribe(LoadSceneSuccessEventArgs.EventId,    OnLoadSceneSuccess);
 
             // Battle Scene Load 실패 이벤트를 등록합니다.
-            mEventComponent.Subscribe(LoadSceneFailureEventArgs.EventId, OnLoadSceneFailure);
+            mEventComponent.Subscribe(LoadSceneFailureEventArgs.EventId,    OnLoadSceneFailure);
 
             // UI Form 실행 성공 이벤트를 등록합니다. 
-            mEventComponent.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnOpenUIFormSuccess);
+            mEventComponent.Subscribe(OpenUIFormSuccessEventArgs.EventId,   OnOpenUIFormSuccess);
 
             // UI Form 실행 실패 이벤트를 등록합니다.
-            mEventComponent.Subscribe(OpenUIFormFailureEventArgs.EventId, OnOpenUIFormFailure);
+            mEventComponent.Subscribe(OpenUIFormFailureEventArgs.EventId,   OnOpenUIFormFailure);
 
             // Battle Scene을 로드합니다.
             mSceneComponent.LoadScene(mBattleSceneAssetName);
@@ -136,7 +137,6 @@ namespace Monster
                 return;
             }
 
-            // Battle이 아직 끝나지 않았다면 Battle Procedure를 유지합니다.
             if (mBattleFinished != true)
             {
                 return;
@@ -151,7 +151,7 @@ namespace Monster
         {
             Log.Info("MyProcedureBattle : Leave");
 
-            if (isShutdown != true & mEventComponent != null)
+            if (isShutdown != true && mEventComponent != null)
             {
                 if (mEventComponent.Check(LoadSceneSuccessEventArgs.EventId, OnLoadSceneSuccess) == true)
                 {
@@ -185,6 +185,33 @@ namespace Monster
                     // 배경 SerialId가 아닌 BattleUI SerialId를 사용합니다.
                     mUIComponent.CloseUIForm(mBattleUISerialId);
                 }
+
+                if (mBattleBackgroundSerialId > 0 &&
+                    mUIComponent.HasUIForm(mBattleBackgroundSerialId))
+                {
+                    mUIComponent.CloseUIForm(mBattleBackgroundSerialId);
+                }
+
+                if (isShutdown != true &&
+                    mSceneComponent != null &&
+                    mSceneComponent.SceneIsLoaded(mBattleSceneAssetName) == true)
+                {
+                    Log.Info("Battle Scene Unload");
+
+                    mSceneComponent.UnloadScene(mBattleSceneAssetName);
+                }
+
+                mSceneLoaded    = false;
+                mBattleFinished = false;
+
+                mBattleBackgroundSerialId   = 0;
+                mBattleUISerialId           = 0;
+
+                mEventComponent     = null;
+                mSceneComponent     = null;
+                mUIComponent        = null;
+
+                base.OnLeave(procedureOwner, isShutdown);
             }
 
             // 전투 배경 UI도 별도로 닫습니다.
@@ -289,22 +316,10 @@ namespace Monster
             // 배경 Addressable 이름을 가져오지 못했다면 Background UI를 열 수 없으므로 종료합니다.
             if (string.IsNullOrEmpty(backgroundAssetName) == true)
             {
-                Log.Error(
-                    $"Battle Background를 찾을 수 없습니다. " +
-                    $"Map = {battleMapName}");
+                Log.Error($"Battle Background를 찾을 수 없습니다. " + $"Map = {battleMapName}");
 
                 return;
             }
-
-            // 배경 전용 SerialId 변수에 저장합니다.
-            mBattleBackgroundSerialId = mUIComponent.OpenUIForm(backgroundAssetName, mBattleBackgroundUIGroupName, 0, false, battleMapName);
-
-            // 실제 Background SerialId를 출력합니다.
-            Log.Info(
-                $"Battle Background Open : " +
-                $"{backgroundAssetName}, " +
-                $"Map = {battleMapName}, " +
-                $"SerialId = {mBattleBackgroundSerialId}");
 
             // Route_bg를 배경 전용 그룹에서 엽니다.
             mBattleBackgroundSerialId = mUIComponent.OpenUIForm(backgroundAssetName, mBattleBackgroundUIGroupName, 0, false, battleMapName);
