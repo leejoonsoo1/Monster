@@ -30,9 +30,9 @@ namespace Monster
         [SerializeField] private Sprite mRunSelectedSprite;
 
         // 버튼 상태를 BattleUI에서 직접 관리합니다.
-        private Image[] mButtonImages;
-        private Sprite[] mNormalSprites;
-        private Sprite[] mSelectedSprites;
+        private Image[]     mButtonImages;
+        private Sprite[]    mNormalSprites;
+        private Sprite[]    mSelectedSprites;
         private int mSelectedIndex = 0;
 
         protected internal override void OnOpen(object userData)
@@ -171,10 +171,11 @@ namespace Monster
         // BottomUI 자식 네 개를 버튼 순서대로 연결합니다.
         private void InitializeButtons()
         {
-            mButtonImages = null;
-            mNormalSprites = null;
-            mSelectedSprites = null;
+            mButtonImages       = null;
+            mNormalSprites      = null;
+            mSelectedSprites    = null;
 
+            // BottomUI가 연결되지 않았거나 자식 버튼이 4개 미만이면 초기화를 중단합니다.
             if (mBottomRoot == null || mBottomRoot.childCount < 4)
             {
                 Log.Error("BattleUI : BottomUI 또는 버튼 4개를 찾을 수 없습니다.");
@@ -193,8 +194,11 @@ namespace Monster
                 new Vector2(530f, -65f)
             };
 
+            // 각 버튼의 Image 컴포넌트를 저장할 배열입니다.
             Image[] buttonImages = new Image[4];
 
+            // Hierarchy에 등록된 버튼 GameObject의 이름입니다.
+            // 버튼을 자식 인덱스가 아닌 이름으로 탐색할 때 사용합니다.
             string[] buttonNames =
             {
                 "FightButton",
@@ -203,6 +207,8 @@ namespace Monster
                 "RunButton"
             };
 
+            // 선택되지 않은 버튼에 사용할 일반 Sprite입니다.
+            // Inspector에 연결한 Sprite를 배열에 저장합니다.
             Sprite[] normalSprites =
             {
                 mFightNormalSprite,
@@ -211,7 +217,8 @@ namespace Monster
                 mRunNormalSprite
             };
 
-
+            // 현재 선택된 버튼에 사용할 Sprite입니다.
+            // Inspector에 연결한 선택 Sprite를 배열에 저장합니다.
             Sprite[] selectedSprites =
             {
                 mFightSelectedSprite,
@@ -220,13 +227,16 @@ namespace Monster
                 mRunSelectedSprite
             };
 
-            // 일반 Sprite가 연결됐는지 먼저 확인합니다.
+            // 4개의 버튼을 순서대로 탐색하고 초기화합니다.
             for (int Index = 0; Index < positions.Length; Index++)
             {
+                // BottomUI의 자식 중 이름이 일치하는 버튼을 탐색합니다.
                 Transform buttonTransform = mBottomRoot.Find(buttonNames[Index]);
 
+                // 버튼의 UI 위치와 크기를 제어하기 위해 RectTransform으로 변환합니다.
                 RectTransform buttonRect = buttonTransform as RectTransform;
 
+                // 버튼이 없거나 RectTransform을 가지고 있지 않으면 종료합니다.
                 if (buttonRect == null)
                 {
                     Log.Error($"BattleUI : {buttonNames[Index]}을 찾을 수 없습니다.");
@@ -234,8 +244,11 @@ namespace Monster
                     return;
                 }
 
+                // 버튼의 Anchor를 부모 BottomUI의 중앙으로 고정합니다.
                 buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
                 buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+
+                // 버튼 자체의 기준점을 중앙으로 설정합니다.
                 buttonRect.pivot     = new Vector2(0.5f, 0.5f);
 
                 buttonRect.anchoredPosition = positions[Index];
@@ -252,25 +265,29 @@ namespace Monster
                     return;
                 }
 
+                // 버튼에 Unity UI Button 컴포턴트가 있는지 확인합니다.
                 Button button = buttonRect.GetComponent<Button>();
 
                 if (button != null)
                 {
+                    // Unity Button의 기본 색상 및 Sprite 전환을 비활성화합니다.
+                    // Sprite 변경은 BattleUI의 SetButtonSprite()에서 직접 처리합니다.
                     button.transition = Selectable.Transition.None;
                 }
 
-                if (button != null)
-                {
-                    button.transition = Selectable.Transition.None;
-                }
-
+                // Image의 색상을 흰색으로 설정하여 Sprite 원본 색상을 유지합니다.
                 buttonImage.color   = Color.white;
+
+                // 현재 버튼의 Image 컴포넌틀르 배열에 저장합니다.
                 buttonImages[Index] = buttonImage;
 
+                // Inpector에 일반 Sprite가 연결되지 않은 경우입니다.
                 if (normalSprites[Index] == null)
                 {
+                    // 현재 Image 컴포넌트에 설정된 Source Image를 일반 Sprite로 사용합니다.
                     normalSprites[Index] = buttonImage.sprite;
-
+                    
+                    // 일반 Sprite가 연결되지 않았음을 경고합니다.
                     Log.Warning($"BattleUI:{buttonNames[Index]} 일반 Sprite 미연결." +
                         $"현재 Source Image를 사용합니다.");
                 }
@@ -278,28 +295,33 @@ namespace Monster
                 // 복원할 기본 이미지조차 없다면 오류를 출력합니다.
                 if (normalSprites[Index] == null)
                 {
+                    // 선택 Sprite가 없더라도 일반 Sprite를 사용할 수 있으므로 경고만 출력합니다.
                     Log.Error($"BattleUI : {buttonNames[Index]}에 Sprite가 없습니다.");
-
-                    return;
                 }
 
+                // 선택 상태에 사용할 Sprite가 연결되어 있는지 확인합니다.
                 if (selectedSprites[Index] == null)
                 {
                     Log.Warning($"BattleUI : {buttonNames[Index]} 선택 Sprite 미연결.");
                 }
             }
 
+            // 초기화한 Image와 Sprite 배열을 멤버 변수에 저장합니다.
+            // 이후 OnUpdate()와 SetButtonSprite()에서 사용합니다.
             mButtonImages       = buttonImages;
             mNormalSprites      = normalSprites;
             mSelectedSprites    = selectedSprites;
+            mSelectedIndex      = 0;
 
-            mSelectedIndex    = 0;
-
+            // 모든 버튼에 현재 선택 상태에 맞는 Sprite를 적용합니다.
             for (int index = 0; index < mButtonImages.Length; index++)
             {
+                // 선택된 버튼은 선택 Sprite를 사용하고,
+                // 선택되지 않은 버튼은 일반 Sprite를 사용합니다.
                 SetButtonSprite(index, index == mSelectedIndex);
             }
 
+            // 버튼 4개의 초기화가 정상적으로 완료되었음을 출력합니다.
             Log.Info("BattleUI : 버튼 초기화 완료");
         }
 

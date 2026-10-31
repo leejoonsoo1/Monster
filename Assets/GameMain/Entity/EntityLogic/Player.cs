@@ -312,7 +312,7 @@ namespace Monster
 
         // </summary>
         // Player가 한 칸 이동을 완료했을 때
-        // 현재 위치에서 랜덤 인카운터를 검사합니다.
+        // 현재 위치에서 수풀을 밟은 횟수를 검사합니다.
         // </summary>
         private void CheckEncounter()
         {
@@ -330,7 +330,7 @@ namespace Monster
             Vector3Int currentCell = mGrid.WorldToCell(mRigidbody2D.position);
 
             // 현재 셀이 수풀인지 확인하고
-            // 수풀이라면 일정 확률로 인카운터 판정합니다.
+            // 수풀 위에서 다섯 번째 이동을 완료했는지 판정합니다.
             bool isEncounter = RPGGame.Instance.EncounterManager.TryEncounter(currentCell);
 
             //인카운터가 발생하지 않았다면
@@ -340,7 +340,7 @@ namespace Monster
                 return;
             }
 
-            Log.Info($"Player : Random Encounter -"  + 
+            Log.Info($"Player : Grass Encounter -"  +
                 $"Cell = {currentCell}, " +
                 $"Direction = {mMoveDirection}");
 
@@ -386,7 +386,7 @@ namespace Monster
             }
 
             // 한 칸 이동을 완전히 끝낸 후
-            // 현재 위치에서 랜덤 인카운터를 검사합니다.
+            // 현재 위치에서 수풀을 밟은 횟수를 검사합니다.
             CheckEncounter();
 
             mIsMoving = false;
@@ -443,6 +443,9 @@ namespace Monster
             {
                 mVisual.localPosition = originalVisualPosition;
             }
+
+            // 점프로 수풀에 착지한 경우에도 한 번 밟은 것으로 셉니다.
+            CheckEncounter();
 
             mIsMoving = false;
         }

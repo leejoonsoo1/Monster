@@ -214,9 +214,10 @@ namespace Monster
 
                 Debug.Log($"현재 셀 : {cellPosition}, " + $"타일 : {tilemap.gameObject.name}");
 
-                if (string.Equals(tilemap.gameObject.name, 
-                    EWalkableTileType.Grass.ToString(), 
-                    StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(tilemap.gameObject.name, "Grace", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(tilemap.gameObject.name,
+                        EWalkableTileType.Grass.ToString(),
+                        StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
