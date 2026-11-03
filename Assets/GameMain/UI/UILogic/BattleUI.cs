@@ -254,7 +254,7 @@ namespace Monster
                 buttonRect.anchoredPosition = positions[Index];
                 buttonRect.sizeDelta        = new Vector2(buttonWidth, buttonHeight);
 
-                buttonRect.localScale = Vector3.one;
+                buttonRect.localScale       = Vector3.one;
 
                 Image buttonImage = buttonRect.GetComponent<Image>();
 
