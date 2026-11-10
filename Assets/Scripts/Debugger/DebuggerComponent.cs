@@ -34,38 +34,38 @@ namespace UnityGameFramework.Runtime
         [SerializeField]
         private ConsoleWindow mConsoleWindow = new ConsoleWindow();
 
-        private SystemInformationWindow mSystemInformationWindow = new SystemInformationWindow();
-        private EnvironmentInformationWindow mEnvironmentInformationWindow = new EnvironmentInformationWindow();
-        private ScreenInformationWindow mScreenInformationWindow = new ScreenInformationWindow();
-        private GraphicsInformationWindow mGraphicsInformationWindow = new GraphicsInformationWindow();
-        private InputSummaryInformationWindow mInputSummaryInformationWindow = new InputSummaryInformationWindow();
-        private InputTouchInformationWindow mInputTouchInformationWindow = new InputTouchInformationWindow();
-        private InputLocationInformationWindow mInputLocationInformationWindow = new InputLocationInformationWindow();
-        private InputAccelerationInformationWindow mInputAccelerationInformationWindow = new InputAccelerationInformationWindow();
-        private InputGyroscopeInformationWindow mInputGyroscopeInformationWindow = new InputGyroscopeInformationWindow();
-        private InputCompassInformationWindow mInputCompassInformationWindow = new InputCompassInformationWindow();
-        private PathInformationWindow mPathInformationWindow = new PathInformationWindow();
-        private SceneInformationWindow mSceneInformationWindow = new SceneInformationWindow();
-        private TimeInformationWindow mTimeInformationWindow = new TimeInformationWindow();
-        private QualityInformationWindow mQualityInformationWindow = new QualityInformationWindow();
-        private ProfilerInformationWindow mProfilerInformationWindow = new ProfilerInformationWindow();
-        private WebPlayerInformationWindow mWebPlayerInformationWindow = new WebPlayerInformationWindow();
-        private RuntimeMemorySummaryWindow mRuntimeMemorySummaryWindow = new RuntimeMemorySummaryWindow();
-        private RuntimeMemoryInformationWindow<Object> mRuntimeMemoryAllInformationWindow = new RuntimeMemoryInformationWindow<Object>();
-        private RuntimeMemoryInformationWindow<Texture> mRuntimeMemoryTextureInformationWindow = new RuntimeMemoryInformationWindow<Texture>();
-        private RuntimeMemoryInformationWindow<Mesh> mRuntimeMemoryMeshInformationWindow = new RuntimeMemoryInformationWindow<Mesh>();
-        private RuntimeMemoryInformationWindow<Material> mRuntimeMemoryMaterialInformationWindow = new RuntimeMemoryInformationWindow<Material>();
-        private RuntimeMemoryInformationWindow<Shader> mRuntimeMemoryShaderInformationWindow = new RuntimeMemoryInformationWindow<Shader>();
-        private RuntimeMemoryInformationWindow<AnimationClip> mRuntimeMemoryAnimationClipInformationWindow = new RuntimeMemoryInformationWindow<AnimationClip>();
-        private RuntimeMemoryInformationWindow<AudioClip> mRuntimeMemoryAudioClipInformationWindow = new RuntimeMemoryInformationWindow<AudioClip>();
-        private RuntimeMemoryInformationWindow<Font> mRuntimeMemoryFontInformationWindow = new RuntimeMemoryInformationWindow<Font>();
-        private RuntimeMemoryInformationWindow<TextAsset> mRuntimeMemoryTextAssetInformationWindow = new RuntimeMemoryInformationWindow<TextAsset>();
-        private RuntimeMemoryInformationWindow<ScriptableObject> mRuntimeMemoryScriptableObjectInformationWindow = new RuntimeMemoryInformationWindow<ScriptableObject>();
-        private ObjectPoolInformationWindow mObjectPoolInformationWindow = new ObjectPoolInformationWindow();
-        private ReferencePoolInformationWindow mReferencePoolInformationWindow = new ReferencePoolInformationWindow();
-        private NetworkInformationWindow mNetworkInformationWindow = new NetworkInformationWindow();
-        private SettingsWindow mSettingsWindow = new SettingsWindow();
-        private OperationsWindow mOperationsWindow = new OperationsWindow();
+        private SystemInformationWindow mSystemInformationWindow                                                    = new SystemInformationWindow();
+        private EnvironmentInformationWindow mEnvironmentInformationWindow                                          = new EnvironmentInformationWindow();
+        private ScreenInformationWindow mScreenInformationWindow                                                    = new ScreenInformationWindow();
+        private GraphicsInformationWindow mGraphicsInformationWindow                                                = new GraphicsInformationWindow();
+        private InputSummaryInformationWindow mInputSummaryInformationWindow                                        = new InputSummaryInformationWindow();
+        private InputTouchInformationWindow mInputTouchInformationWindow                                            = new InputTouchInformationWindow();
+        private InputLocationInformationWindow mInputLocationInformationWindow                                      = new InputLocationInformationWindow();
+        private InputAccelerationInformationWindow mInputAccelerationInformationWindow                              = new InputAccelerationInformationWindow();
+        private InputGyroscopeInformationWindow mInputGyroscopeInformationWindow                                    = new InputGyroscopeInformationWindow();
+        private InputCompassInformationWindow mInputCompassInformationWindow                                        = new InputCompassInformationWindow();
+        private PathInformationWindow mPathInformationWindow                                                        = new PathInformationWindow();
+        private SceneInformationWindow mSceneInformationWindow                                                      = new SceneInformationWindow();
+        private TimeInformationWindow mTimeInformationWindow                                                        = new TimeInformationWindow();
+        private QualityInformationWindow mQualityInformationWindow                                                  = new QualityInformationWindow();
+        private ProfilerInformationWindow mProfilerInformationWindow                                                = new ProfilerInformationWindow();
+        private WebPlayerInformationWindow mWebPlayerInformationWindow                                              = new WebPlayerInformationWindow();
+        private RuntimeMemorySummaryWindow mRuntimeMemorySummaryWindow                                              = new RuntimeMemorySummaryWindow();
+        private RuntimeMemoryInformationWindow<Object> mRuntimeMemoryAllInformationWindow                           = new RuntimeMemoryInformationWindow<Object>();
+        private RuntimeMemoryInformationWindow<Texture> mRuntimeMemoryTextureInformationWindow                      = new RuntimeMemoryInformationWindow<Texture>();
+        private RuntimeMemoryInformationWindow<Mesh> mRuntimeMemoryMeshInformationWindow                            = new RuntimeMemoryInformationWindow<Mesh>();
+        private RuntimeMemoryInformationWindow<Material> mRuntimeMemoryMaterialInformationWindow                    = new RuntimeMemoryInformationWindow<Material>();
+        private RuntimeMemoryInformationWindow<Shader> mRuntimeMemoryShaderInformationWindow                        = new RuntimeMemoryInformationWindow<Shader>();
+        private RuntimeMemoryInformationWindow<AnimationClip> mRuntimeMemoryAnimationClipInformationWindow          = new RuntimeMemoryInformationWindow<AnimationClip>();
+        private RuntimeMemoryInformationWindow<AudioClip> mRuntimeMemoryAudioClipInformationWindow                  = new RuntimeMemoryInformationWindow<AudioClip>();
+        private RuntimeMemoryInformationWindow<Font> mRuntimeMemoryFontInformationWindow                            = new RuntimeMemoryInformationWindow<Font>();
+        private RuntimeMemoryInformationWindow<TextAsset> mRuntimeMemoryTextAssetInformationWindow                  = new RuntimeMemoryInformationWindow<TextAsset>();
+        private RuntimeMemoryInformationWindow<ScriptableObject> mRuntimeMemoryScriptableObjectInformationWindow    = new RuntimeMemoryInformationWindow<ScriptableObject>();
+        private ObjectPoolInformationWindow mObjectPoolInformationWindow                                            = new ObjectPoolInformationWindow();
+        private ReferencePoolInformationWindow mReferencePoolInformationWindow                                      = new ReferencePoolInformationWindow();
+        private NetworkInformationWindow mNetworkInformationWindow                                                  = new NetworkInformationWindow();
+        private SettingsWindow mSettingsWindow                                                                      = new SettingsWindow();
+        private OperationsWindow mOperationsWindow                                                                  = new OperationsWindow();
 
         private FpsCounter mFpsCounter = null;
 
@@ -135,9 +135,11 @@ namespace UnityGameFramework.Runtime
             base.Awake();
 
             mDebuggerManager = GameFrameworkEntry.GetModule<IDebuggerManager>();
+
             if (mDebuggerManager == null)
             {
                 Log.Fatal("Debugger manager is invalid.");
+
                 return;
             }
 
@@ -207,6 +209,11 @@ namespace UnityGameFramework.Runtime
 
         private void Update()
         {
+            if (mFpsCounter == null)
+            {
+                return;
+            }
+
             mFpsCounter.Update(Time.deltaTime, Time.unscaledDeltaTime);
         }
 
@@ -217,11 +224,11 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            GUISkin cachedGuiSkin = GUI.skin;
-            Matrix4x4 cachedMatrix = GUI.matrix;
+            GUISkin cachedGuiSkin   = GUI.skin;
+            Matrix4x4 cachedMatrix  = GUI.matrix;
 
-            GUI.skin = mSkin;
-            GUI.matrix = Matrix4x4.Scale(new Vector3(mWindowScale, mWindowScale, 1f));
+            GUI.skin    = mSkin;
+            GUI.matrix  = Matrix4x4.Scale(new Vector3(mWindowScale, mWindowScale, 1f));
 
             bool showFullWindow = mShowFullWindow;
             if (showFullWindow)
@@ -233,8 +240,8 @@ namespace UnityGameFramework.Runtime
                 mIconRect = GUILayout.Window(0, mIconRect, DrawDebuggerWindowIcon, "<b>DEBUGGER</b>");
             }
 
-            GUI.matrix = cachedMatrix;
-            GUI.skin = cachedGuiSkin;
+            GUI.matrix  = cachedMatrix;
+            GUI.skin    = cachedGuiSkin;
         }
 
         public void RegisterDebuggerWindow(string path, IDebuggerWindow debuggerWindow, params object[] args)
@@ -259,8 +266,8 @@ namespace UnityGameFramework.Runtime
 
         public void ResetLayout()
         {
-            IconRect = DefaultIconRect;
-            WindowRect = DefaultWindowRect;
+            IconRect    = DefaultIconRect;
+            WindowRect  = DefaultWindowRect;
             WindowScale = DefaultWindowScale;
         }
 

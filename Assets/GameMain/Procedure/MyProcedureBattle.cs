@@ -1,4 +1,5 @@
 using GameFramework.Event;
+using UnityEngine;
 using UnityGameFramework.Runtime;
 
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
@@ -15,6 +16,8 @@ namespace Monster
 
         private const string mBattleBackgroundUIGroupName = "BattleBackground";
 
+
+
         // Battle에서 항상 사용하는 하단 공통 UI Form입니다.
 
         private EventComponent mEventComponent;
@@ -22,6 +25,7 @@ namespace Monster
 
         // UGF UI를 열고 닫기 위해 사용합니다.
         private UIComponent mUIComponent;
+        private BattlePokemonSpawner mPokemonSpawner;
 
         // 현재 열려 있는 배틀 배경 UI의 SerialId입니다.
         private int mBattleBackgroundSerialId = 0;
@@ -51,13 +55,13 @@ namespace Monster
             mBattleUISerialId           = 0;
 
             // GameFramework의 EventComponent를 가져옵니다.
-            mEventComponent = GameEntry.GetComponent<EventComponent>();
+            mEventComponent     = GameEntry.GetComponent<EventComponent>();
 
             // GameFramework의 SceneComponent를 가져옵니다.
-            mSceneComponent = GameEntry.GetComponent<SceneComponent>();
+            mSceneComponent     = GameEntry.GetComponent<SceneComponent>();
 
             // GameFramework의 UIComponent를 가져옵니다.
-            mUIComponent    = GameEntry.GetComponent<UIComponent>();
+            mUIComponent        = GameEntry.GetComponent<UIComponent>();
 
             // EventComponent를 찾지 못했다면 이벤트를 처리를 할 수 없으므로 종료합니다.
             if (mEventComponent == null)
@@ -82,6 +86,7 @@ namespace Monster
 
                 return;
             }
+
 
             // Runtime UIManager에 Battle UI Group이 존재하는지 확인합니다.
             if (mUIComponent.HasUIGroup(mBattleUIGroupName) != true)
@@ -137,6 +142,12 @@ namespace Monster
                 return;
             }
 
+            // D키로 배틀 종료를 요청하면 아래의 공통 복귀 흐름을 사용합니다.
+            //if (Input.GetKeyDown(KeyCode.D) == true)
+            //{
+            //    FinishBattle();
+            //}
+
             if (mBattleFinished != true)
             {
                 return;
@@ -144,12 +155,20 @@ namespace Monster
 
             Log.Info("MyProcedureBattle -> MyProcedureMain");
 
+            // Main 초기화 시 저장한 필드 위치와 방향을 복원합니다.
             ChangeState<MyProcedureMain>(procedureOwner);
         }
 
         protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
         {
             Log.Info("MyProcedureBattle : Leave");
+
+            // UI 상태와 관계없이 생성하거나 로딩 중인 배틀 Entity를 회수합니다.
+            if (mPokemonSpawner != null)
+            {
+                mPokemonSpawner.DespawnBattlePokemon();
+                mPokemonSpawner = null;
+            }
 
             if (isShutdown != true && mEventComponent != null)
             {
@@ -178,47 +197,21 @@ namespace Monster
             // 존재하거나 로딩 중인 UI Form만 닫습니다.
             if (isShutdown != true && mUIComponent != null)
             {
-                // BattleUI가 실제로 열려 있을 때만 닫습니다.
+                // 로딩 중인 UI도 취소하여 복귀 후 배틀 UI가 나타나지 않게 합니다.
                 if (mBattleUISerialId > 0 &&
-                    mUIComponent.HasUIForm(mBattleUISerialId) == true)
+                    (mUIComponent.HasUIForm(mBattleUISerialId) ||
+                     mUIComponent.IsLoadingUIForm(mBattleUISerialId)))
                 {
                     // 배경 SerialId가 아닌 BattleUI SerialId를 사용합니다.
                     mUIComponent.CloseUIForm(mBattleUISerialId);
                 }
 
                 if (mBattleBackgroundSerialId > 0 &&
-                    mUIComponent.HasUIForm(mBattleBackgroundSerialId))
+                    (mUIComponent.HasUIForm(mBattleBackgroundSerialId) ||
+                     mUIComponent.IsLoadingUIForm(mBattleBackgroundSerialId)))
                 {
                     mUIComponent.CloseUIForm(mBattleBackgroundSerialId);
                 }
-
-                if (isShutdown != true &&
-                    mSceneComponent != null &&
-                    mSceneComponent.SceneIsLoaded(mBattleSceneAssetName) == true)
-                {
-                    Log.Info("Battle Scene Unload");
-
-                    mSceneComponent.UnloadScene(mBattleSceneAssetName);
-                }
-
-                mSceneLoaded    = false;
-                mBattleFinished = false;
-
-                mBattleBackgroundSerialId   = 0;
-                mBattleUISerialId           = 0;
-
-                mEventComponent     = null;
-                mSceneComponent     = null;
-                mUIComponent        = null;
-
-                base.OnLeave(procedureOwner, isShutdown);
-            }
-
-            // 전투 배경 UI도 별도로 닫습니다.
-            if (mBattleBackgroundSerialId > 0 && 
-                mUIComponent.HasUIForm(mBattleBackgroundSerialId) == true)
-            {
-                mUIComponent.CloseUIForm(mBattleBackgroundSerialId);
             }
 
             if (isShutdown != true && 
@@ -334,6 +327,20 @@ namespace Monster
             Log.Info($"Battle UI Open : " +
                 $"{mBattleUIAssetName}" + 
                 $"SerialId = {mBattleUISerialId}");
+
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+            if (entityComponent == null)
+            {
+                Log.Error("Battle Pokemon을 생성할 EntityComponent가 없습니다.");
+                return;
+            }
+
+            mPokemonSpawner = GameEntry.GetComponent<BattlePokemonSpawner>();
+            if (mPokemonSpawner == null)
+            {
+                mPokemonSpawner = entityComponent.gameObject.AddComponent<BattlePokemonSpawner>();
+            }
+            mPokemonSpawner.SpawnBattlePokemon();
         }
 
         private void OnLoadSceneFailure(object sender, GameEventArgs eventArgs)

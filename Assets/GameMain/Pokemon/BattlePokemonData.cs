@@ -12,16 +12,21 @@ namespace Monster
         // 상대 포켓몬 여부입니다.
         public bool IsEnemy         { get; private set; }
 
+        // 월드에 표시할 포켓몬의 배율입니다.
+        public float Scale          { get; private set; }
+
         public BattlePokemonData(
             int id,
             int typeId,
             Vector3 position,
             Sprite pokemonSprite,
-            bool isEnemy) : base(id, typeId)
+            bool isEnemy,
+            float scale = 1f) : base(id, typeId)
         {
             Position        = position;
             PokemonSprite   = pokemonSprite;
             IsEnemy         = isEnemy;
+            Scale           = scale;
         }
     }
 }

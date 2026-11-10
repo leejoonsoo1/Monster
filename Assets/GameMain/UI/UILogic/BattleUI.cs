@@ -1,4 +1,5 @@
 using System;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityGameFramework.Runtime;
@@ -13,6 +14,8 @@ namespace Monster
         [SerializeField] private Transform mEnemyStatusRoot;
         [SerializeField] private Transform mPlayerStatusRoot;
         [SerializeField] private Transform mBottomRoot;
+        // FightMenu 변수 선언
+        [SerializeField] private Transform mFightMenu;
 
         [SerializeField] private RectTransform mEnemyStatus1;
         [SerializeField] private RectTransform mEnemyStatus2;
@@ -33,7 +36,11 @@ namespace Monster
         private Image[]     mButtonImages;
         private Sprite[]    mNormalSprites;
         private Sprite[]    mSelectedSprites;
-        private int mSelectedIndex = 0;
+
+        private MyProcedureBattle mBattleProcedure;
+
+        private int mSelectedIndex      = 0;
+        private bool mIsFightMenuOpen   = false;
 
         protected internal override void OnOpen(object userData)
         {
@@ -73,6 +80,19 @@ namespace Monster
             SetUIRect(mEnemyStatusRoot,     new Vector2(0f, 1f),    new Vector2(0f, 1f),    new Vector2(0f, -80f),  new Vector2(600f, 160f),    new Vector2(-mWidth * 0.5f, -80f));
             SetUIRect(mPlayerStatusRoot,    new Vector2(1f, 0f),    new Vector2(1f, 0f),    new Vector2(0f, 300f),  new Vector2(600f, 180f),    new Vector2(mWidth * 0.5f, -mHeight + 300f));
             SetUIRect(mBottomRoot,          new Vector2(0.5f, 1f),  new Vector2(0.5f, 1f),  new Vector2(0f, -810f), new Vector2(1440f, 270f),   new Vector2(0f, -810f));
+            
+            // FightMenu SetUIRect() 호출합니다.
+            if (mFightMenu == null)
+            {
+                mFightMenu = transform.Find("FIghtMenu");
+                if (mFightMenu == null)
+                {
+                    mFightMenu = transform.Find("FightMenu");
+                }
+            }
+
+            SetUIRect(mFightMenu,           new Vector2(0.5f, 1f),  new Vector2(0.5f, 1f),  new Vector2(0f, -810f), new Vector2(1440f, 270f),   new Vector2(0f, -810f));
+            SetFightMenuVisible(false);
 
             // 상대 체력바를 왼쪽 상단 영역의 가운데에 배치합니다.
             SetUIRect(mEnemyStatus1, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 120f), new Vector2(300f, -80f));
@@ -80,9 +100,9 @@ namespace Monster
             // 아군 체력바를 오른쪽 하단 영역의 가운데에 배치합니다.
             SetUIRect(mPlayerStatus1, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 120f), new Vector2(-300f, 90f));
 
-            SetStatusVisible(mEnemyStatus1,     true);
+            SetUIVisible(mEnemyStatus1,     true);
             //SetStatusVisible(mEnemyStatus2,     false);
-            SetStatusVisible(mPlayerStatus1,    true);
+            SetUIVisible(mPlayerStatus1,    true);
             //SetStatusVisible(mPlayerStatus2,    false);
 
             // Inspector 연결 없이 부모 Root에서 2번 상태창을 찾습니다.
@@ -100,11 +120,20 @@ namespace Monster
             }
 
             // 싱글 배틀에서는 2번 상태창을 비활성화합니다.
-            SetStatusVisible(enemyStatus2,  false);
-            SetStatusVisible(playerStatus2, false);
+            SetUIVisible(enemyStatus2,  false);
+            SetUIVisible(playerStatus2, false);
+
 
             // 하단 버튼의 기본 Sprite와 선택 Sprite를 초기화합니다.
             InitializeButtons();
+
+            // BattleProcedure를 가져옵니다.
+            mBattleProcedure = GameEntry.GetComponent<ProcedureComponent>().CurrentProcedure as MyProcedureBattle;
+
+            if (mBattleProcedure == null)
+            {
+                Log.Error("BattleUI : ProcedureComponent가 없습니다.");
+            }
 
             Log.Info("BattleUI : Single Battle UI 활성화 완료");
         }
@@ -114,11 +143,81 @@ namespace Monster
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
 
-            if (mButtonImages == null)
+           if (mButtonImages == null)
             {
                 return;
             }
 
+            // FightMenu가 열려있으면 방향키 입력을 무시합니다.
+            if (mIsFightMenuOpen == true)
+            {
+                UpdateFightMenu();
+
+                // 기존 CommandMenu의 입별 처리는 실행하지 않습니다.
+                return;
+            }
+
+            // FightMenu가 닫혀 있으면 기존 명령 메뉴를 처리합니다.
+            UpdateCommandMenu();
+        }
+
+        // FightMenu의 입력을 처리합니다.
+        private void UpdateFightMenu()
+        {
+            // X키를 누르면 기술 선택 메뉴를 딛고 기본 명령 메뉴로 돌아갑니다.
+            if (Input.GetKeyDown(KeyCode.X) == true)
+            {
+                SetFightMenuVisible(false);
+
+                return;
+            }
+
+            // 기술 선택 방향키와 C키 확정은 이 함수에서 구현합니다.
+        }
+
+        // 싸운다, 가방, 포켓몬, 도망의 입력을 처리합니다.
+        private void UpdateCommandMenu()
+        {
+            // 기본 메뉴에서는 X키를 눌러도 별도 동작을 하지 않습니다.
+            if (Input.GetKeyDown(KeyCode.X) == true)
+            {
+                return;
+            }
+
+            // C키로 현재 선택된 명령을 실행합니다.
+            if (Input.GetKeyDown(KeyCode.C) == true)
+            {
+                // 싸운다 버튼 선택 시 기술 메뉴를 표시합니다.
+                if (mSelectedIndex == 0)
+                {
+                    SetFightMenuVisible(true);
+                }
+                // 도망 버튼 선택 시 전투 종료 함수를 호출합니다.
+                else if (mSelectedIndex == 1)
+                {
+                    ;
+                }
+                else if (mSelectedIndex == 2)
+                {
+                    ;
+                }
+                else if (mSelectedIndex == 3)
+                {
+                    // Procedure 참조가 있을 때만 종료를 요청합니다.
+                    if (mBattleProcedure != null)
+                    {
+                        mBattleProcedure.FinishBattle();
+                    }
+                    else
+                    {
+                        Log.Warning("BattleUI : MyProcedureBattle을 찾을 수 없습니다.");
+                    }
+                }
+
+                return;
+            }
+
+            // 방향키 입련에 따라 다음 선택 인덱스를 계산합니다.
             int nextIndex = mSelectedIndex;
 
             if (Input.GetKeyDown(KeyCode.LeftArrow) == true)
@@ -130,7 +229,7 @@ namespace Monster
             }
             else if (Input.GetKeyDown(KeyCode.RightArrow) == true)
             {
-                if (nextIndex % 2 ==0)
+                if (nextIndex % 2 == 0)
                 {
                     nextIndex++;
                 }
@@ -150,22 +249,45 @@ namespace Monster
                 }
             }
 
+            // 선택된 버튼이 변경되지 않았다면 종료합니다.
             if (nextIndex == mSelectedIndex)
             {
                 return;
             }
 
             // 변경 전 버튼의 인덱스를 저장합니다.
-            int previousIndex = mSelectedIndex;
-            mSelectedIndex = nextIndex;
+            int previousIndex   = mSelectedIndex;
 
-            // 이전 버튼은 지정된 일반 Sprite로 복원합니다.
+            // 새로운 버튼의 인덱스를 저장합니다.
+            mSelectedIndex      = nextIndex;
+
+            // 이전 버튼을 일반 Sprite로 복원합니다.
             SetButtonSprite(previousIndex, false);
 
-            // 새로 선택한 버튼만 선택 이미지로 변경합니다.
+            // 새로운 버튼을 선택 Sprite로 변경합니다.
             SetButtonSprite(mSelectedIndex, true);
 
             Log.Info($"BattleUI : Selected Index = {mSelectedIndex}");
+        }
+
+        private void SetFightMenuVisible(bool isVisible)
+        {
+            // FightMenu를 열려고 하지만 오브젝트가 없다면 중단합니다.
+            if (isVisible == true && mFightMenu == null)
+            {
+                Log.Warning("BattleUI : FightMenu를 찾을 수 없습니다.");
+
+                return;
+            }
+
+            // 현재 FightMenu의 활성화 상태를 저장합니다.
+            mIsFightMenuOpen = isVisible;
+
+            // FightMenu의 활성화 상태를 변경합니다.
+            SetUIVisible(mFightMenu, isVisible);
+
+            // FightMenu가 표시되면 기존 BottomUI는 숨깁니다.
+            SetUIVisible(mBottomRoot, isVisible == false);
         }
 
         // BottomUI 자식 네 개를 버튼 순서대로 연결합니다.
@@ -401,8 +523,8 @@ namespace Monster
             target.localScale = Vector3.one;
         }
 
-        // 중복되어 있던 SetStatusVisible()을 하나로 통합했습니다.
-        private void SetStatusVisible(Transform status, bool isVisible)
+        // UI를 활성화/비활성화합니다.
+        private void SetUIVisible(Transform status, bool isVisible)
         {
             if (status == null)
             {
@@ -417,6 +539,9 @@ namespace Monster
 
         protected internal override void OnClose(bool isShutdown, object userData)
         {
+            // 다음 배틀에서 기본 메뉴부터 열리도록 상태를 초기화합니다.
+            SetFightMenuVisible(false);
+
             // BattleUI가 닫힐 때 버튼 Sprite를 기본 상태로 되돌립니다.
             if (mButtonImages != null && mNormalSprites != null)
             {

@@ -45,19 +45,24 @@ namespace Monster
 
         // 포켓몬의 공격력입니다.
         public int Attack       { get; private set; }
+
+        public int Action       { get; private set; }
+
         public int Defense      { get; private set; }
         public int SpAttack     { get; private set; }
         public int SpDefense    { get; private set; }
         public int Speed        { get; private set; }
 
         // 포켓몬 기본 데이터를 초기화합니다.
-        public PokemonData(int pokemonId, string name, int level, EPokemonType primaryType, EPokemonType secondaryType, int maxHP, int attack, int defense, int specialAttack, int specialDefense, int speed)
+        public PokemonData(int pokemonId, string name, int level, EPokemonType primaryType, EPokemonType secondaryType, int maxHP, int action, int attack, int defense, int specialAttack, int specialDefense, int speed)
         {
             PrimaryType     = primaryType;
             SecondaryType   = secondaryType;
 
             MaxHP           = maxHP;
             CurrentHP       = maxHP;
+
+            Action          = action;
 
             Attack          = attack;
             Defense         = defense;

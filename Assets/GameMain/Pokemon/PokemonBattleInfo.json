@@ -1,0 +1,147 @@
+{
+  "DataNote": "피카츄와 이브이의 레벨 5 전투 테스트용 예시 데이터입니다.",
+  "FieldDescriptions": {
+    "PokemonId": "포켓몬 도감 번호",
+    "Name": "포켓몬 이름",
+    "Level": "현재 레벨",
+    "PrimaryType": "첫 번째 타입: Electric=전기, Normal=노말",
+    "SecondaryType": "두 번째 타입: None=없음",
+    "MaxHP": "최대 체력",
+    "CurrentHP": "현재 체력",
+    "Attack": "물리 공격력",
+    "Action": "프로젝트 행동 값의 초기값",
+    "Defense": "물리 방어력",
+    "SpAttack": "특수 공격력",
+    "SpDefense": "특수 방어력",
+    "Speed": "스피드",
+    "Experience": "현재 레벨에서 획득한 경험치. 레벨 시작 시 0",
+    "ExperienceToNextLevel": "다음 레벨로 올라가기 위해 현재 레벨에서 모아야 하는 경험치 기준값",
+    "Skills": "보유 기술 목록. 배열 순서대로 기술 메뉴에 표시",
+    "Category": "기술 분류: Physical=물리, Special=특수, Status=변화",
+    "Power": "기술 위력. 변화 기술은 0",
+    "Accuracy": "기술 명중률(%). 100은 100%",
+    "MaxPP": "기술의 최대 사용 횟수",
+    "CurrentPP": "기술의 남은 사용 횟수",
+    "Priority": "기술 우선도. 높은 값부터 먼저 행동"
+  },
+  "Pokemon": [
+    {
+      "PokemonId": 25,
+      "Name": "피카츄",
+      "Level": 5,
+      "PrimaryType": "Electric",
+      "SecondaryType": "None",
+      "MaxHP": 22,
+      "CurrentHP": 22,
+      "Attack": 11,
+      "Action": 0,
+      "Defense": 9,
+      "SpAttack": 11,
+      "SpDefense": 11,
+      "Speed": 15,
+      "Experience": 0,
+      "ExperienceToNextLevel": 100,
+      "Skills": [
+        {
+          "Name": "전기쇼크",
+          "Type": "Electric",
+          "Category": "Special",
+          "Power": 40,
+          "Accuracy": 100,
+          "MaxPP": 30,
+          "CurrentPP": 30,
+          "Priority": 0
+        },
+        {
+          "Name": "전광석화",
+          "Type": "Normal",
+          "Category": "Physical",
+          "Power": 40,
+          "Accuracy": 100,
+          "MaxPP": 30,
+          "CurrentPP": 30,
+          "Priority": 1
+        },
+        {
+          "Name": "울음소리",
+          "Type": "Normal",
+          "Category": "Status",
+          "Power": 0,
+          "Accuracy": 100,
+          "MaxPP": 40,
+          "CurrentPP": 40,
+          "Priority": 0
+        },
+        {
+          "Name": "꼬리흔들기",
+          "Type": "Normal",
+          "Category": "Status",
+          "Power": 0,
+          "Accuracy": 100,
+          "MaxPP": 30,
+          "CurrentPP": 30,
+          "Priority": 0
+        }
+      ]
+    },
+    {
+      "PokemonId": 133,
+      "Name": "이브이",
+      "Level": 5,
+      "PrimaryType": "Normal",
+      "SecondaryType": "None",
+      "MaxHP": 25,
+      "CurrentHP": 25,
+      "Attack": 12,
+      "Action": 0,
+      "Defense": 11,
+      "SpAttack": 10,
+      "SpDefense": 13,
+      "Speed": 11,
+      "Experience": 0,
+      "ExperienceToNextLevel": 100,
+      "Skills": [
+        {
+          "Name": "몸통박치기",
+          "Type": "Normal",
+          "Category": "Physical",
+          "Power": 40,
+          "Accuracy": 100,
+          "MaxPP": 35,
+          "CurrentPP": 35,
+          "Priority": 0
+        },
+        {
+          "Name": "전광석화",
+          "Type": "Normal",
+          "Category": "Physical",
+          "Power": 40,
+          "Accuracy": 100,
+          "MaxPP": 30,
+          "CurrentPP": 30,
+          "Priority": 1
+        },
+        {
+          "Name": "울음소리",
+          "Type": "Normal",
+          "Category": "Status",
+          "Power": 0,
+          "Accuracy": 100,
+          "MaxPP": 40,
+          "CurrentPP": 40,
+          "Priority": 0
+        },
+        {
+          "Name": "꼬리흔들기",
+          "Type": "Normal",
+          "Category": "Status",
+          "Power": 0,
+          "Accuracy": 100,
+          "MaxPP": 30,
+          "CurrentPP": 30,
+          "Priority": 0
+        }
+      ]
+    }
+  ]
+}

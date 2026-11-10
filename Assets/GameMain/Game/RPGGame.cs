@@ -356,7 +356,7 @@ namespace Monster
                     $"Direction = {RuntimePlayerData.mDirection}");
             }
 
-            SpawnCharacter(mAssetPath, spawnPosition, Vector2.down);
+            SpawnCharacter(mAssetPath, spawnPosition, spawnDirecion);
         }
 
         // =========================================
@@ -434,6 +434,29 @@ namespace Monster
 
         public void ShutdownField()
         {
+            // Entity를 제거하기 전에 복귀할 셀과 바라보는 방향을 저장합니다.
+            if (mPlayer != null && mGrid != null)
+            {
+                RuntimePlayerData.SaveFieldState(
+                    mGrid.WorldToCell(mPlayer.transform.position), mPlayer.mMoveDirection);
+            }
+
+            // 복귀 후 새 RPGGame만 Entity 생성 이벤트를 처리하도록 해제합니다.
+            EventComponent eventComponent = GameEntry.GetComponent<EventComponent>();
+
+            if (eventComponent != null)
+            {
+                if (eventComponent.Check(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess))
+                {
+                    eventComponent.Unsubscribe(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess);
+                }
+
+                if (eventComponent.Check(ShowEntityFailureEventArgs.EventId, OnShowEntityFailure))
+                {
+                    eventComponent.Unsubscribe(ShowEntityFailureEventArgs.EventId, OnShowEntityFailure);
+                }
+            }
+
             // GameFramework의 EntityComponent를 가져옵니다.
             // 현재 필드에서 생성되어 있는 Entity들을 정리할 때 사용합니다.
             EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();

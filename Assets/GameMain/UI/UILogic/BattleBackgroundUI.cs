@@ -22,6 +22,19 @@ namespace Monster
 
             Log.Info("BattleBackgroundUI : Open");
 
+            // 배경은 월드 Entity 뒤에, 명령/상태 UI는 Overlay로 그립니다.
+            Canvas backgroundCanvas = GetComponentInParent<Canvas>();
+            Camera battleCamera     = Camera.main;
+
+            if (backgroundCanvas != null && battleCamera != null)
+            {
+                backgroundCanvas.renderMode     = RenderMode.ScreenSpaceCamera;
+                backgroundCanvas.worldCamera    = battleCamera;
+                backgroundCanvas.planeDistance  = 20f;
+                backgroundCanvas.sortingLayerID = 0;
+                backgroundCanvas.sortingOrder   = -1000;
+            }
+
             // 현재 배경 UI Form의 RectTransform을 가져옵니다.
             RectTransform rectTransform = transform as RectTransform;
 

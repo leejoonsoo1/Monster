@@ -111,13 +111,13 @@ namespace Monster
             }
 
             // 테스트용 C키를 누르면 Battle 전환을 한다.
-            if (Input.GetKeyDown(KeyCode.C) == true)
-            {
-                if (mGame != null)
-                {
-                    mGame.RequestBattle();
-                }
-            }
+            //if (Input.GetKeyDown(KeyCode.C) == true)
+            //{
+            //    if (mGame != null)
+            //    {
+            //        mGame.RequestBattle();
+            //    }
+            //}
 
             if (mGame != null &&
                 mGame.IsBattleRequested)
