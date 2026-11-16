@@ -15,18 +15,23 @@ namespace Monster
         // 월드에 표시할 포켓몬의 배율입니다.
         public float Scale          { get; private set; }
 
+        // JSON에서 읽은 전투 능력치입니다. 아군은 파티의 원본 데이터를 사용합니다.
+        public PokemonData Stats { get; private set; }
+
         public BattlePokemonData(
             int id,
             int typeId,
             Vector3 position,
             Sprite pokemonSprite,
             bool isEnemy,
-            float scale = 1f) : base(id, typeId)
+            float scale = 1f,
+            PokemonData stats = null) : base(id, typeId)
         {
             Position        = position;
             PokemonSprite   = pokemonSprite;
             IsEnemy         = isEnemy;
             Scale           = scale;
+            Stats           = stats;
         }
     }
 }

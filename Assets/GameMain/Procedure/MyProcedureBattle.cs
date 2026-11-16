@@ -27,6 +27,9 @@ namespace Monster
         private UIComponent mUIComponent;
         private BattlePokemonSpawner mPokemonSpawner;
 
+        // 현재 테스트용 상대 포켓몬의 도감 번호입니다.
+        private int mEnemyPokemonId = 133;
+
         // 현재 열려 있는 배틀 배경 UI의 SerialId입니다.
         private int mBattleBackgroundSerialId = 0;
 
@@ -35,6 +38,7 @@ namespace Monster
 
         private bool mSceneLoaded       = false;
         private bool mBattleFinished    = false;
+        private bool mPokemonSpawnRequested = false;
 
         public override bool UseNativeDialog => false;
 
@@ -47,6 +51,7 @@ namespace Monster
             // Battle Procedure의 상태를 초기화합니다.
             mSceneLoaded    = false;
             mBattleFinished = false;
+            mPokemonSpawnRequested = false;
 
             // 현재 열려 있는 Battle Background UI의 SerialId를 초기화합니다
             mBattleBackgroundSerialId   = 0;
@@ -86,7 +91,6 @@ namespace Monster
 
                 return;
             }
-
 
             // Runtime UIManager에 Battle UI Group이 존재하는지 확인합니다.
             if (mUIComponent.HasUIGroup(mBattleUIGroupName) != true)
@@ -129,6 +133,12 @@ namespace Monster
             // UI Form 실행 실패 이벤트를 등록합니다.
             mEventComponent.Subscribe(OpenUIFormFailureEventArgs.EventId,   OnOpenUIFormFailure);
 
+            // 전투 포켓몬 생성 성공 이벤트를 등록합니다.
+            mEventComponent.Subscribe(ShowEntitySuccessEventArgs.EventId, OnShowBattleEntitySuccess);
+
+            // 전투 포켓몬 생성 실패 이벤트를 등록합니다.
+            mEventComponent.Subscribe(ShowEntityFailureEventArgs.EventId, OnShowBattleEntityFailure);
+
             // Battle Scene을 로드합니다.
             mSceneComponent.LoadScene(mBattleSceneAssetName);
         }
@@ -142,14 +152,10 @@ namespace Monster
                 return;
             }
 
-            // D키로 배틀 종료를 요청하면 아래의 공통 복귀 흐름을 사용합니다.
-            //if (Input.GetKeyDown(KeyCode.D) == true)
-            //{
-            //    FinishBattle();
-            //}
-
             if (mBattleFinished != true)
             {
+                // JSON 로딩과 초기 파티 생성이 늦어져도 준비된 프레임에 소환합니다.
+                TrySpawnBattlePokemon();
                 return;
             }
 
@@ -190,6 +196,16 @@ namespace Monster
                 if (mEventComponent.Check(OpenUIFormFailureEventArgs.EventId, OnOpenUIFormFailure) == true)
                 {
                     mEventComponent.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnOpenUIFormFailure);
+                }
+
+                if (mEventComponent.Check(ShowEntitySuccessEventArgs.EventId, OnShowBattleEntitySuccess) == true)
+                {
+                    mEventComponent.Unsubscribe(ShowEntitySuccessEventArgs.EventId, OnShowBattleEntitySuccess);
+                }
+
+                if (mEventComponent.Check(ShowEntityFailureEventArgs.EventId, OnShowBattleEntityFailure) == true)
+                {
+                    mEventComponent.Unsubscribe(ShowEntityFailureEventArgs.EventId, OnShowBattleEntityFailure);
                 }
             }
 
@@ -258,7 +274,30 @@ namespace Monster
             // Battle Scene의 로드가 완료되었음을 저장합니다.
             mSceneLoaded = true;
 
-            // UIComponent가 정상적으로 존재하는지 확인합니다.
+            // 배경 UI 로딩 전에 몬스터 소환을 요청합니다.
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+
+            if (entityComponent == null)
+            {
+                Log.Error("EntityComponent를 찾을 수 없습니다.");
+
+                return;
+            }
+
+            // 기존 Spawner가 있다면 재사용합니다.
+            mPokemonSpawner = GameEntry.GetComponent<BattlePokemonSpawner>();
+
+            if (mPokemonSpawner == null)
+            {
+                // Spawnwer가 없다면 EntityComponent와 같은 오브젝트에 생성합니다.
+                mPokemonSpawner = entityComponent.gameObject.AddComponent<BattlePokemonSpawner>();
+
+                Log.Info("MyProcedureBattle : BattlePokemonSpawner 생성 완료");
+            }
+
+            TrySpawnBattlePokemon();
+
+            // mBattle UI Group을 확인합니다.
             if (mUIComponent == null)
             {
                 Log.Error("UIComponent를 찾을 수 없습니다.");
@@ -324,23 +363,66 @@ namespace Monster
             // background보다 위에 표시되도록 Priority를 1로 설정합니다.
             mBattleUISerialId = mUIComponent.OpenUIForm(mBattleUIAssetName, mBattleUIGroupName, 0, false, null);
 
-            Log.Info($"Battle UI Open : " +
-                $"{mBattleUIAssetName}" + 
+            Log.Info($"Battle UI Open : {mBattleUIAssetName}," +
                 $"SerialId = {mBattleUISerialId}");
+        }
 
-            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
-            if (entityComponent == null)
+        private void TrySpawnBattlePokemon()
+        {
+            if (mBattleFinished || mPokemonSpawnRequested || mPokemonSpawner == null || RPGGame.Instance == null)
             {
-                Log.Error("Battle Pokemon을 생성할 EntityComponent가 없습니다.");
                 return;
             }
 
-            mPokemonSpawner = GameEntry.GetComponent<BattlePokemonSpawner>();
-            if (mPokemonSpawner == null)
+            PokemonDatabase database = RPGGame.Instance.PokemonDatabase;
+            PokemonPartyManager party = RPGGame.Instance.PokemonPartyManager;
+            if (database == null || !database.mIsLoaded || party == null || party.Count == 0)
             {
-                mPokemonSpawner = entityComponent.gameObject.AddComponent<BattlePokemonSpawner>();
+                return;
             }
-            mPokemonSpawner.SpawnBattlePokemon();
+
+            mPokemonSpawnRequested = true;
+            mPokemonSpawner.SpawnBattlePokemon(mEnemyPokemonId);
+            Log.Info($"MyProcedureBattle : 전투 포켓몬 생성 요청 완료, EnemyPokemonId = {mEnemyPokemonId}");
+        }
+
+        // UGF에서 전투 포켓몬 생성 성공 여부를 확인합니다.
+        private void OnShowBattleEntitySuccess(object sender, GameEventArgs eventArgs)
+        {
+            ShowEntitySuccessEventArgs args = eventArgs as ShowEntitySuccessEventArgs;
+
+            if (args == null || args.Entity == null || args.Entity.EntityGroup == null)
+            {
+                return;
+            }
+
+            // BattlePokemon 그룹에 속한 엔티티만 처리합니다.
+            if (args.Entity.EntityGroup.Name != "BattlePokemon")
+            {
+                return;
+            }
+
+            Log.Info($"[Battle Debug] ShowEntity 성공 :" +
+                $"EntityId = {args.Entity.Id}," +
+                $"Asset = {args.Entity.EntityAssetName}");
+        }
+
+        // UGF에서 전투 포켓몬 생성이 실패한 경우 로그를 출력합니다.
+        private void OnShowBattleEntityFailure(object sender, GameEventArgs eventArgs)
+        {
+            ShowEntityFailureEventArgs ne = eventArgs as ShowEntityFailureEventArgs;
+
+            if (ne == null)
+            {
+                return;
+            }
+
+            if (ne.EntityGroupName != "BattlePokemon")
+            {
+                return;
+            }
+
+            Log.Error($"Battle Pokemon 생성 실패 : EntityId = {ne.EntityId}, Asset = {ne.EntityAssetName}, Error = {ne.ErrorMessage}");
         }
 
         private void OnLoadSceneFailure(object sender, GameEventArgs eventArgs)

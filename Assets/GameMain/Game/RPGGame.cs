@@ -17,18 +17,18 @@ namespace Monster
         private Grid mGrid;
         private Player mPlayer;
 
-        private string mAssetPath               = "Player";
-        private const string mPlayerGroupName     = "Player";
+        private string mAssetPath             = "Player";
+        private const string mPlayerGroupName = "Player";
         
-        private string mMapAssetPath            = "Map";
-        private const string mMapGroupName      = "Map";
+        private string mMapAssetPath       = "Map";
+        private const string mMapGroupName = "Map";
 
         // 현재 지역에 대응되는 Battle Background를 관리합니다.
-        private string mBattleMapName           = "Route";
+        private string mBattleMapName = "Route";
  
         // UGF에서 생성한 Entity를 나중에 제거하기 위해 ID를 저장합니다.
-        private int mPlayerEntityId             = 0;
-        private int mMapEntityId                = 0;
+        private int mPlayerEntityId = 0;
+        private int mMapEntityId    = 0;
 
         private TilemapManager mTilemapManager;
         private EnCounterManager mEncounterManager;
@@ -205,6 +205,8 @@ namespace Monster
             {
                 mStarterPartyInitialized = true;
 
+                Log.Info($"RPGGame : 기존 파티 유지, 소지 포켓몬 수 = {mSharedPokemonPartyManager.Count}");
+
                 return;
             }
 
@@ -229,9 +231,6 @@ namespace Monster
             bool pikachuAdded   = mSharedPokemonPartyManager.AddPokemon(pikachu);
             bool eeveeAdded     = mSharedPokemonPartyManager.AddPokemon(eevee);
 
-            // 플레이어 파티에 등록합니다.
-            bool pikachAdded    = mSharedPokemonPartyManager.AddPokemon(pikachu);
-            
             if (pikachuAdded == true && eeveeAdded == true)
             {
                 mStarterPartyInitialized = true;
@@ -260,7 +259,7 @@ namespace Monster
                     OnShowEntityFailure);
             }
 
-            // 생생했던 Player와 Map Entity를 실제로 제거합니다.
+            // 생성했던 Player와 Map Entity를 실제로 제거합니다.
             EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
 
             if (entityComponent != null)
@@ -306,7 +305,7 @@ namespace Monster
             mPlayer = null;
             mGrid   = null;
 
-            mBattleRequested            = false;
+            mBattleRequested = false;
 
             if (Instance == this)
             {

@@ -68,6 +68,7 @@ namespace Monster
             if (enemyPokemonId <= 0)
             {
                 Log.Error("BattlePokemonSpawner : 상대 포켓몬 번호는 1 이상이어야 합니다.");
+
                 return;
             }
 
@@ -79,6 +80,9 @@ namespace Monster
         public void SpawnBattlePokemon()
         {
             DespawnBattlePokemon();
+
+            // Battle Scene 로드 이후 소환 함수까지 실행했는지 확인합니다.
+            Log.Info($"[Battle Debug] 소환 시작 : 상대 ID : {mEnemyPokemonId}");
 
             mEntityComponent    = GameEntry.GetComponent<EntityComponent>();
             Camera battleCamera = Camera.main;
@@ -99,6 +103,21 @@ namespace Monster
 
                 return;
             }
+
+            PokemonDatabase database = RPGGame.Instance.PokemonDatabase;
+            if (database == null || !database.mIsLoaded)
+            {
+                Log.Warning("BattlePokemonSpawner : 포켓몬 JSON 로딩이 완료되지 않았습니다.");
+                return;
+            }
+
+            PokemonInfo enemyInfo = database.GetPokemonInfo(mEnemyPokemonId);
+            if (enemyInfo == null)
+            {
+                Log.Error($"BattlePokemonSpawner : JSON에서 상대 포켓몬 {mEnemyPokemonId} 정보를 찾을 수 없습니다.");
+                return;
+            }
+            PokemonData enemyPokemon = new PokemonData(enemyInfo);
 
             // 포켓몬 번호에 해당하는 아군용 프리팹 주소를 조회합니다.
             string playerAssetName = GetPlayerPokemonAssetName(playerPokemon.PokemonId);
@@ -147,11 +166,17 @@ namespace Monster
             PlayerEntityId = EntitySerialId.Next();
             EnemyEntityId  = EntitySerialId.Next();
 
+            // 다른 상대 ID를 전달해도 현재 상대 프리팹은 이브이로 고정되어 있습니다.
+            if (mEnemyPokemonId != 133)
+            {
+                Log.Warning($"[Battle Debug] 상대 ID = {mEnemyPokemonId}이지만 상대 프리팹은 {mEnemyPokemonAssetName}입니다.");
+            }
+
             // 필드에 저장한 번호를 상대 포켓몬의 생성 데이터에 전달합니다.
-            SpawnPokemon(new BattlePokemonData(EnemyEntityId, mEnemyPokemonId, enemyPosition, null, true, mPokemonScale), enemyPosition, mEnemyPokemonAssetName);
+            SpawnPokemon(new BattlePokemonData(EnemyEntityId, enemyPokemon.PokemonId, enemyPosition, null, true, mPokemonScale, enemyPokemon), enemyPosition, mEnemyPokemonAssetName);
 
             // 아군 포켓몬은 고정 ID 대신 파티의 포켓몬 ID를 사용합니다.
-            SpawnPokemon(new BattlePokemonData(PlayerEntityId, playerPokemon.PokemonId, playerPosition, null, false, mPokemonScale), playerPosition, playerAssetName);
+            SpawnPokemon(new BattlePokemonData(PlayerEntityId, playerPokemon.PokemonId, playerPosition, null, false, mPokemonScale, playerPokemon), playerPosition, playerAssetName);
 
             // 실제 출전하는 아군 포켓몬의 정보를 출력합니다.
             Log.Info(
@@ -256,6 +281,10 @@ namespace Monster
 
             // 로딩 중에도 종료 요청으로 취소할 수 있도록 먼저 ID를 기록합니다.
             mEntityIds.Add(pokemonData.Id);
+
+            // [추가] 프리팹 로드 '요청'과 로드 성공을 구분하기 위한 로그입니다.
+            Log.Info($"[Battle Debug] ShowEntity 요청 : EntityId = {pokemonData.Id}, PokemonId = {pokemonData.TypeId}, Asset = {assetName}, Position = {spawnPosition}");
+
 
             // UGF EntityComponent에서 포켓몬 프리팹을 생성합니다.
             mEntityComponent.ShowEntity(pokemonData.Id, typeof(BattlePokemon), assetName, mEntityGroupName, pokemonData);

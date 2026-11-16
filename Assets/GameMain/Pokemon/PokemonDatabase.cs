@@ -63,7 +63,7 @@ namespace Monster
     public class  PokemonDatabase
     {
         // Addressables에 등록할 JSON의 주소입니다.
-        private const string mAssetName = "PokemonBattleInfo";
+        private const string mAssetName = "Assets/GameMain/Pokemon/PokemonBattleInfo.json";
 
         // 도감 번호를 기준으로 포켓몬 정보를 보관합니다.
         private readonly Dictionary<int, PokemonInfo> mPokemonInfos = new Dictionary<int, PokemonInfo>();
@@ -112,7 +112,8 @@ namespace Monster
                 // 로딩 성공 여부와 TextAsset 존재 여부를 확인합니다.
                 if (operation.Status != AsyncOperationStatus.Succeeded || operation.Result == null)
                 {
-                    Log.Error($"PokemonDatabase : JSON 로딩 실패 - {operation.Status}");
+                    Log.Error($"PokemonDatabase : JSON 로딩 실패 - Asset = {mAssetName}, " +
+                        $"Status = {operation.Status}, Error = {operation.OperationException}");
 
                     return;
                 }
