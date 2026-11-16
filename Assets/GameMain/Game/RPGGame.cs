@@ -1,8 +1,6 @@
 using GameFramework.Entity;
 using GameFramework.Event;
 using GameFramework.UI;
-using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityGameFramework.Runtime;
@@ -20,27 +18,35 @@ namespace Monster
         private Player mPlayer;
 
         private string mAssetPath               = "Player";
-        private const string PlayerGroupName    = "Player";
+        private const string mPlayerGroupName     = "Player";
         
         private string mMapAssetPath            = "Map";
-        private const string MapGroupName       = "Map";
+        private const string mMapGroupName      = "Map";
 
         // 현재 지역에 대응되는 Battle Background를 관리합니다.
         private string mBattleMapName           = "Route";
-
+ 
         // UGF에서 생성한 Entity를 나중에 제거하기 위해 ID를 저장합니다.
-        private int mPlayerEntityId = 0;
-        private int mMapEntityId = 0;
+        private int mPlayerEntityId             = 0;
+        private int mMapEntityId                = 0;
 
         private TilemapManager mTilemapManager;
         private EnCounterManager mEncounterManager;
 
         // 맵에 따른 Battle Background를 관리합니다.
         private BattleBackgroundManager mBattleBackgroundManager;
+
         // 현재 Player가 위치한 Map 이름입니다.
         private string mCurrentMapName;
-
         private bool mBattleRequested = false;
+
+        // Main Scene을 재진입해도 데이터베이스를 유지합니다.
+        private static PokemonDatabase mSharedPokemonDatabase;
+
+        // 필드와 전투 씬을 이동해도 소지 포켓몬 정보를 유지합니다.
+        private static PokemonPartyManager mSharedPokemonPartyManager;
+
+        private static bool mStarterPartyInitialized = false;
 
         public TilemapManager TilemapManager
         {
@@ -90,6 +96,19 @@ namespace Monster
             }
         }
 
+        // 다른 클래스에서 포켓몬 데이터베이스를 조회합니다.
+        public PokemonDatabase PokemonDatabase
+        {
+            get { return mSharedPokemonDatabase; }
+        }
+
+
+        // 외부 클래스에서 플레이어 파티를 조회합니다.
+        public PokemonPartyManager PokemonPartyManager
+        {
+            get { return mSharedPokemonPartyManager; }
+        }
+
         // <summary>
         // Scene이 변경되어도 유지할 Player의 Runtime Data입니다.
         // </summary>
@@ -100,12 +119,39 @@ namespace Monster
         } = new PlayerRuntimeData();
 
         // private EntityComponent entityComponent;
-        public override EGameMode GameMode => EGameMode.RPG;
+        public override EGameMode GameMode
+        {
+            get { return EGameMode.RPG; }
+        }
 
         public override void Initialize()
         {
             base.Initialize();
             Instance = this;
+
+            // 파티를 최초 한 번만 생성합니다.
+            if (mSharedPokemonPartyManager == null)
+            {
+                mSharedPokemonPartyManager = new PokemonPartyManager();
+            }
+
+            // 포켓몬 데이터베이스를 최초 한 번만 생성합니다.
+            if (mSharedPokemonDatabase == null)
+            {
+                mSharedPokemonDatabase = new PokemonDatabase();
+
+                mSharedPokemonDatabase.Loaded += OnPokemonDatabaseLoaded;
+            }
+
+            // 게임 시작 시 포켓몬 JSON 데이터를 불러옵니다.
+            // 이미 로딩 중이거나 완료된 상태라면 중복 로드하지 않습니다.
+            mSharedPokemonDatabase.Initialize();
+
+            // 이미 JSON 로딩이 완료됐다면 파티 초기화를 확인합니다.
+            if (mSharedPokemonDatabase.mIsLoaded == true)
+            {
+                InitializeStarterParty();
+            }
 
             mBattleBackgroundManager = new BattleBackgroundManager();
             mBattleBackgroundManager.Initialize();
@@ -123,6 +169,82 @@ namespace Monster
             eventComponent.Subscribe(ShowEntityFailureEventArgs.EventId, OnShowEntityFailure);
 
             SpawnMap(mMapAssetPath, Vector3.zero);
+        }
+
+        // PokemonDatabase의 JSON 로딩이 완료되면 호출됩니다.
+        private static void OnPokemonDatabaseLoaded()
+        {
+            Log.Info("RPGGame : PokeomonDatabase 로딩 완료");
+
+            // 데이터베이스가 준비되었으므로 파티를 초기화합니다.
+            InitializeStarterParty();
+        }
+
+        // 데이터베이스에 등록된 포켓몬을 개별 데이터로 복사하여 파티에 추가합니다.
+        private static void InitializeStarterParty()
+        {
+            // 데이터베이스와 파티가 생성되었는지 확인합니다.
+            if (mSharedPokemonDatabase == null || mSharedPokemonPartyManager == null)
+            {
+                return;
+            }
+
+            // JSON 로딩이 완료되지 않았다면 초기화하지 않습니다.
+            if (mSharedPokemonDatabase.mIsLoaded != true)
+            {
+                return;
+            }
+
+            // 파티가 이미 초기화됐다면 중복 등록하지 않습니다.
+            if (mStarterPartyInitialized == true)
+            {
+                return;
+            }
+
+            if (mSharedPokemonPartyManager.Count > 0)
+            {
+                mStarterPartyInitialized = true;
+
+                return;
+            }
+
+            // 데이터베이스에서 피카츄 정보를 가져옵니다.
+            PokemonInfo pikachuInfo = mSharedPokemonDatabase.GetPokemonInfo(25);
+
+            // 데이터베이스에서 이브이 정보를 가져옵니다.
+            PokemonInfo eeveeInfo = mSharedPokemonDatabase.GetPokemonInfo(133);
+
+            if (pikachuInfo == null || eeveeInfo == null)
+            {
+                Log.Error("RPGGame : 초기 포켓몬 정보를 찾을 수 없습니다.");
+
+                return;
+            }
+
+            // 개별 포켓몬 데이터 생성
+            PokemonData pikachu = new PokemonData(pikachuInfo);
+            PokemonData eevee   = new PokemonData(eeveeInfo);
+
+            // 플레이어 파티에 등록합니다.
+            bool pikachuAdded   = mSharedPokemonPartyManager.AddPokemon(pikachu);
+            bool eeveeAdded     = mSharedPokemonPartyManager.AddPokemon(eevee);
+
+            // 플레이어 파티에 등록합니다.
+            bool pikachAdded    = mSharedPokemonPartyManager.AddPokemon(pikachu);
+            
+            if (pikachuAdded == true && eeveeAdded == true)
+            {
+                mStarterPartyInitialized = true;
+
+                Log.Info($"RPGGame : 파티 등록 - {pikachu.Name}");
+                Log.Info($"RPGGame : 파티 등록 - {eevee.Name}");
+            }
+            else
+            {
+                Log.Error("RPGGame : 초기 파티 등록 실패");
+            }
+
+            Log.Info($"RPGGame : 현재 소지 포켓몬 수 = {mSharedPokemonPartyManager.Count}");
         }
 
         public override void Shutdown()
@@ -216,7 +338,7 @@ namespace Monster
                 id,                             
                 typeof(MapEntity),                                   // 실행할 EntityLogic
                 assetPath,                                           // "Map" 프리팹 Addressable 이름
-                MapGroupName,                                        // Entity Group 이름
+                mMapGroupName,                                       // Entity Group 이름
                 new MapData(id, 1, position, Quaternion.identity));  // MapEntity.OnShow로 전달
         }
 
@@ -240,7 +362,7 @@ namespace Monster
                 id,
                 typeof(Player),
                 assetPath,
-                PlayerGroupName,
+                mPlayerGroupName,
                 new PlayerData(id, 1, position, direction));
         }
 
@@ -259,14 +381,14 @@ namespace Monster
 
             string entityGroupName = args.Entity.EntityGroup.Name;
 
-            if (entityGroupName == MapGroupName)
+            if (entityGroupName == mMapGroupName)
             {
                 InitializeMap(args);
 
                 return;
             }
 
-            if (entityGroupName == PlayerGroupName)
+            if (entityGroupName == mPlayerGroupName)
             {
 
                 InitializePlayer(args);
@@ -414,7 +536,7 @@ namespace Monster
         // </summary>
         public void RequestBattle()
         {
-            if (mBattleRequested)
+            if (mBattleRequested == true)
             {
                 return;
             }

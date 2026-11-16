@@ -4,21 +4,21 @@ namespace Monster
     public enum EPokemonType
     {
         None = 0,
-        Normal = 1,
-        Fire = 2,
-        Water = 3,
-        Electric = 4,
-        Grass = 5,
-        Ice = 6,
-        Fighting = 7,
-        Poison = 8,
-        Ground = 9,
-        Flying = 10,
-        Psychic = 11,
-        Bug = 12,
-        Rock = 13,
-        Ghost = 14,
-        Dragon = 15
+        Normal,
+        Fire,
+        Water,
+        Electric,
+        Grass,
+        Ice,
+        Fighting,
+        Poison,
+        Ground,
+        Flying,
+        Psychic,
+        Bug,
+        Rock,
+        Ghost,
+        Dragon
     }
 
     // 포켓몬의 기본 정보 및 능력치를 관리합니다.
@@ -33,9 +33,9 @@ namespace Monster
         // 포켓몬의 현재 레벨입니다.
         public int Level        { get; private set; }
 
-
         // 포켓몬의 첫 번째 타입입니다.
         public EPokemonType PrimaryType     { get; private set; }
+        
         // 단일 타입 포켓몬은 None을 사용합니다.
         public EPokemonType SecondaryType   { get; private set; }
 
@@ -45,7 +45,6 @@ namespace Monster
 
         // 포켓몬의 공격력입니다.
         public int Attack       { get; private set; }
-
         public int Action       { get; private set; }
 
         public int Defense      { get; private set; }
@@ -54,21 +53,48 @@ namespace Monster
         public int Speed        { get; private set; }
 
         // 포켓몬 기본 데이터를 초기화합니다.
-        public PokemonData(int pokemonId, string name, int level, EPokemonType primaryType, EPokemonType secondaryType, int maxHP, int action, int attack, int defense, int specialAttack, int specialDefense, int speed)
+        public PokemonData(PokemonInfo pokemonInfo)
         {
-            PrimaryType     = primaryType;
-            SecondaryType   = secondaryType;
+            if (pokemonInfo == null)
+            {
+                throw new System.ArgumentNullException(nameof(pokemonInfo));
+            }
 
-            MaxHP           = maxHP;
-            CurrentHP       = maxHP;
+            PokemonId   = pokemonInfo.PokemonId;
+            Name        = pokemonInfo.Name;
+            Level       = pokemonInfo.Level;
 
-            Action          = action;
+            // 포켓몬 타입을 문자열에서 enum으로 변환합니다.
+            EPokemonType primaryType;
+            EPokemonType secondaryType;
 
-            Attack          = attack;
-            Defense         = defense;
-            SpAttack        = specialAttack;
-            SpDefense       = specialDefense;
-            Speed           = speed;
+            if (System.Enum.TryParse(pokemonInfo.PrimaryType, true, out primaryType) == true)
+            {
+                PrimaryType = primaryType;
+            }
+            else
+            {
+                PrimaryType = EPokemonType.None;
+            }
+
+            if (System.Enum.TryParse(pokemonInfo.SecondaryType, true, out secondaryType) == true)
+            {
+                SecondaryType = secondaryType;
+            }
+            else
+            {
+                SecondaryType = EPokemonType.None;
+            }
+
+            MaxHP       = System.Math.Max(0, pokemonInfo.MaxHP);
+            CurrentHP   = System.Math.Clamp(pokemonInfo.CurrentHP, 0, MaxHP);
+
+            Attack      = pokemonInfo.Attack;
+            Action      = pokemonInfo.Action;
+            Defense     = pokemonInfo.Defense;
+            SpAttack    = pokemonInfo.SpAttack;
+            SpDefense   = pokemonInfo.SpDefense;
+            Speed       = pokemonInfo.Speed;
         }
 
         // 포켓몬의 현재 체력을 변경합니다.

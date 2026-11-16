@@ -472,7 +472,8 @@ namespace UnityGameFramework.Runtime
 
         private void RefreshAudioListener()
         {
-            mAudioListener.enabled = FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Length <= 1;
+            // Unity 6에서 사용 중단된 FindObjectsSortMode.None 매개변수를 제거합니다.
+            mAudioListener.enabled = Object.FindObjectsByType<AudioSource>().Length <= 1;
         }
     }
 }

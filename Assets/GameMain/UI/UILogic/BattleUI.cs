@@ -33,9 +33,9 @@ namespace Monster
         [SerializeField] private Sprite mRunSelectedSprite;
 
         // 버튼 상태를 BattleUI에서 직접 관리합니다.
-        private Image[]     mButtonImages;
-        private Sprite[]    mNormalSprites;
-        private Sprite[]    mSelectedSprites;
+        private Image[] mButtonImages;
+        private Sprite[] mNormalSprites;
+        private Sprite[] mSelectedSprites;
 
         private MyProcedureBattle mBattleProcedure;
 
@@ -52,21 +52,21 @@ namespace Monster
 
             if (rootRect != null)
             {
-                rootRect.anchorMin          = new Vector2(0.5f, 1f);
-                rootRect.anchorMax          = new Vector2(0.5f, 1f);
-                rootRect.pivot              = new Vector2(0.5f, 1f);
-                rootRect.anchoredPosition   = Vector2.zero;
-                rootRect.sizeDelta          = new Vector2(mWidth, mHeight);
-                rootRect.localScale         = Vector3.one;
+                rootRect.anchorMin = new Vector2(0.5f, 1f);
+                rootRect.anchorMax = new Vector2(0.5f, 1f);
+                rootRect.pivot = new Vector2(0.5f, 1f);
+                rootRect.anchoredPosition = Vector2.zero;
+                rootRect.sizeDelta = new Vector2(mWidth, mHeight);
+                rootRect.localScale = Vector3.one;
             }
             else
             {
-                RectTransform parentRect    = transform.parent as RectTransform;
+                RectTransform parentRect = transform.parent as RectTransform;
 
                 if (parentRect != null)
                 {
-                    float centerX           = (0.5f - parentRect.pivot.x) * parentRect.rect.width;
-                    float topY              = (1f - parentRect.pivot.y) * parentRect.rect.height;
+                    float centerX = (0.5f - parentRect.pivot.x) * parentRect.rect.width;
+                    float topY = (1f - parentRect.pivot.y) * parentRect.rect.height;
                     transform.localPosition = new Vector3(centerX, topY, 0f);
                 }
                 else
@@ -77,10 +77,10 @@ namespace Monster
                 transform.localScale = Vector3.one;
             }
 
-            SetUIRect(mEnemyStatusRoot,     new Vector2(0f, 1f),    new Vector2(0f, 1f),    new Vector2(0f, -80f),  new Vector2(600f, 160f),    new Vector2(-mWidth * 0.5f, -80f));
-            SetUIRect(mPlayerStatusRoot,    new Vector2(1f, 0f),    new Vector2(1f, 0f),    new Vector2(0f, 300f),  new Vector2(600f, 180f),    new Vector2(mWidth * 0.5f, -mHeight + 300f));
-            SetUIRect(mBottomRoot,          new Vector2(0.5f, 1f),  new Vector2(0.5f, 1f),  new Vector2(0f, -810f), new Vector2(1440f, 270f),   new Vector2(0f, -810f));
-            
+            SetUIRect(mEnemyStatusRoot, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, -80f), new Vector2(600f, 160f), new Vector2(-mWidth * 0.5f, -80f));
+            SetUIRect(mPlayerStatusRoot, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(0f, 300f), new Vector2(600f, 180f), new Vector2(mWidth * 0.5f, -mHeight + 300f));
+            SetUIRect(mBottomRoot, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -810f), new Vector2(1440f, 270f), new Vector2(0f, -810f));
+
             // FightMenu SetUIRect() 호출합니다.
             if (mFightMenu == null)
             {
@@ -91,7 +91,7 @@ namespace Monster
                 }
             }
 
-            SetUIRect(mFightMenu,           new Vector2(0.5f, 1f),  new Vector2(0.5f, 1f),  new Vector2(0f, -810f), new Vector2(1440f, 270f),   new Vector2(0f, -810f));
+            SetUIRect(mFightMenu, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -810f), new Vector2(1440f, 270f), new Vector2(0f, -810f));
             SetFightMenuVisible(false);
 
             // 상대 체력바를 왼쪽 상단 영역의 가운데에 배치합니다.
@@ -100,13 +100,13 @@ namespace Monster
             // 아군 체력바를 오른쪽 하단 영역의 가운데에 배치합니다.
             SetUIRect(mPlayerStatus1, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 120f), new Vector2(-300f, 90f));
 
-            SetUIVisible(mEnemyStatus1,     true);
+            SetUIVisible(mEnemyStatus1, true);
             //SetStatusVisible(mEnemyStatus2,     false);
-            SetUIVisible(mPlayerStatus1,    true);
+            SetUIVisible(mPlayerStatus1, true);
             //SetStatusVisible(mPlayerStatus2,    false);
 
             // Inspector 연결 없이 부모 Root에서 2번 상태창을 찾습니다.
-            Transform enemyStatus2  = mEnemyStatus2;
+            Transform enemyStatus2 = mEnemyStatus2;
             Transform playerStatus2 = mPlayerStatus2;
 
             if (enemyStatus2 == null && mEnemyStatusRoot != null)
@@ -120,7 +120,7 @@ namespace Monster
             }
 
             // 싱글 배틀에서는 2번 상태창을 비활성화합니다.
-            SetUIVisible(enemyStatus2,  false);
+            SetUIVisible(enemyStatus2, false);
             SetUIVisible(playerStatus2, false);
 
 
@@ -143,7 +143,7 @@ namespace Monster
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
 
-           if (mButtonImages == null)
+            if (mButtonImages == null)
             {
                 return;
             }
@@ -256,10 +256,10 @@ namespace Monster
             }
 
             // 변경 전 버튼의 인덱스를 저장합니다.
-            int previousIndex   = mSelectedIndex;
+            int previousIndex = mSelectedIndex;
 
             // 새로운 버튼의 인덱스를 저장합니다.
-            mSelectedIndex      = nextIndex;
+            mSelectedIndex = nextIndex;
 
             // 이전 버튼을 일반 Sprite로 복원합니다.
             SetButtonSprite(previousIndex, false);
@@ -293,9 +293,9 @@ namespace Monster
         // BottomUI 자식 네 개를 버튼 순서대로 연결합니다.
         private void InitializeButtons()
         {
-            mButtonImages       = null;
-            mNormalSprites      = null;
-            mSelectedSprites    = null;
+            mButtonImages = null;
+            mNormalSprites = null;
+            mSelectedSprites = null;
 
             // BottomUI가 연결되지 않았거나 자식 버튼이 4개 미만이면 초기화를 중단합니다.
             if (mBottomRoot == null || mBottomRoot.childCount < 4)
@@ -305,8 +305,8 @@ namespace Monster
                 return;
             }
 
-            float buttonWidth   = 340f;
-            float buttonHeight  = 120f;
+            float buttonWidth = 340f;
+            float buttonHeight = 120f;
 
             Vector2[] positions =
             {
@@ -371,12 +371,12 @@ namespace Monster
                 buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
 
                 // 버튼 자체의 기준점을 중앙으로 설정합니다.
-                buttonRect.pivot     = new Vector2(0.5f, 0.5f);
+                buttonRect.pivot = new Vector2(0.5f, 0.5f);
 
                 buttonRect.anchoredPosition = positions[Index];
-                buttonRect.sizeDelta        = new Vector2(buttonWidth, buttonHeight);
+                buttonRect.sizeDelta = new Vector2(buttonWidth, buttonHeight);
 
-                buttonRect.localScale       = Vector3.one;
+                buttonRect.localScale = Vector3.one;
 
                 Image buttonImage = buttonRect.GetComponent<Image>();
 
@@ -398,7 +398,7 @@ namespace Monster
                 }
 
                 // Image의 색상을 흰색으로 설정하여 Sprite 원본 색상을 유지합니다.
-                buttonImage.color   = Color.white;
+                buttonImage.color = Color.white;
 
                 // 현재 버튼의 Image 컴포넌틀르 배열에 저장합니다.
                 buttonImages[Index] = buttonImage;
@@ -408,7 +408,7 @@ namespace Monster
                 {
                     // 현재 Image 컴포넌트에 설정된 Source Image를 일반 Sprite로 사용합니다.
                     normalSprites[Index] = buttonImage.sprite;
-                    
+
                     // 일반 Sprite가 연결되지 않았음을 경고합니다.
                     Log.Warning($"BattleUI:{buttonNames[Index]} 일반 Sprite 미연결." +
                         $"현재 Source Image를 사용합니다.");
@@ -430,10 +430,10 @@ namespace Monster
 
             // 초기화한 Image와 Sprite 배열을 멤버 변수에 저장합니다.
             // 이후 OnUpdate()와 SetButtonSprite()에서 사용합니다.
-            mButtonImages       = buttonImages;
-            mNormalSprites      = normalSprites;
-            mSelectedSprites    = selectedSprites;
-            mSelectedIndex      = 0;
+            mButtonImages = buttonImages;
+            mNormalSprites = normalSprites;
+            mSelectedSprites = selectedSprites;
+            mSelectedIndex = 0;
 
             // 모든 버튼에 현재 선택 상태에 맞는 Sprite를 적용합니다.
             for (int index = 0; index < mButtonImages.Length; index++)
@@ -450,8 +450,8 @@ namespace Monster
         // 지정한 버튼 하나의 Sprite만 변경합니다.
         private void SetButtonSprite(int index, bool isSelected)
         {
-            if (mButtonImages == null || 
-                mNormalSprites == null || 
+            if (mButtonImages == null ||
+                mNormalSprites == null ||
                 mSelectedSprites == null)
             {
                 return;
@@ -494,19 +494,19 @@ namespace Monster
                 return;
             }
 
-            RectTransform rect          = target as RectTransform;
-            RectTransform parentRect    = target.parent as RectTransform;
+            RectTransform rect = target as RectTransform;
+            RectTransform parentRect = target.parent as RectTransform;
 
             if (rect != null)
             {
-                rect.pivot      = pivot;
-                rect.sizeDelta  = size;
+                rect.pivot = pivot;
+                rect.sizeDelta = size;
 
                 if (parentRect != null)
                 {
-                    rect.anchorMin          = anchor;
-                    rect.anchorMax          = anchor;
-                    rect.anchoredPosition   = anchoredPosition;
+                    rect.anchorMin = anchor;
+                    rect.anchorMax = anchor;
+                    rect.anchoredPosition = anchoredPosition;
                 }
                 else
                 {
@@ -552,16 +552,16 @@ namespace Monster
                     if (mButtonImages[index] != null)
                     {
                         buttonImages.sprite = mNormalSprites[index];
-                        buttonImages.color  = Color.white;
+                        buttonImages.color = Color.white;
                     }
                 }
             }
 
-            mButtonImages       = null;
-            mNormalSprites      = null;
-            mSelectedSprites    = null;
+            mButtonImages = null;
+            mNormalSprites = null;
+            mSelectedSprites = null;
 
-            mSelectedIndex      = 0;
+            mSelectedIndex = 0;
 
             Log.Info("BattleUI : Close");
 
