@@ -1,5 +1,5 @@
-using System;
-using UnityEditor;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityGameFramework.Runtime;
@@ -11,16 +11,38 @@ namespace Monster
         private const float mWidth = 1440f;
         private const float mHeight = 1080f;
 
+        // C키를 누르지 않았을 때 메시지를 표시하는 시간입니다.
+        private const float mMessageDuration = 5f;
+
         [SerializeField] private Transform mEnemyStatusRoot;
         [SerializeField] private Transform mPlayerStatusRoot;
         [SerializeField] private Transform mBottomRoot;
-        // FightMenu 변수 선언
         [SerializeField] private Transform mFightMenu;
+
+        // 기본 전투 명령 안내 라벨
+        [SerializeField] private TMP_Text mCommandLabel;
+
+        [SerializeField] private Sprite[] mFightCursorSprites;
+
+        // 기술 버튼의 이미지와 라벨을 저장합니다.
+        private readonly Image[] mSkillImages = new Image[4];
+        private readonly TMP_Text[] mSkillLabels = new TMP_Text[4];
+        private readonly Dictionary<string, Sprite> mFightCursorByName = new Dictionary<string, Sprite>();
+        private IReadOnlyList<PokemonSkillInfo> mFightSkills;
+        private int mSelectedSkillIndex = -1;
+
+        // 전투 메세지 배경 및 텍스트
+        [SerializeField] private Transform  mMessagePanel;
+        [SerializeField] private TMP_Text   mMessageLabel;
 
         [SerializeField] private RectTransform mEnemyStatus1;
         [SerializeField] private RectTransform mEnemyStatus2;
         [SerializeField] private RectTransform mPlayerStatus1;
         [SerializeField] private RectTransform mPlayerStatus2;
+
+        // 싱글 배틀에 참가하는 상대와 아군 포켓몬의 상태창입니다.
+        [SerializeField] private PokemonStatusView mEnemyStatusView = new PokemonStatusView();
+        [SerializeField] private PokemonStatusView mPlayerStatusView = new PokemonStatusView();
 
         [SerializeField] private Sprite mFightNormalSprite;
         [SerializeField] private Sprite mBagNormalSprite;
@@ -37,6 +59,21 @@ namespace Monster
         private Sprite[] mNormalSprites;
         private Sprite[] mSelectedSprites;
 
+        // 메시지 출력 상태
+        private bool mIsIntroPlaying        = false;
+        private int mIntroMessageIndex      = 0;
+        private float mIntroElapsedSeconds  = 0f;
+        private string mIntroPlayerName;
+
+        // 도망 메시지 출력 상태
+        private bool mIsEscapePlaying = false;
+
+        // 도망 메시지 경과 시간
+        private float mEscapeElapsedSeconds = 0f;
+
+        // 도망 메시지가 끝날 때까지 배틀 진행을 기다리게 합니다.
+        internal bool IsEscapePlaying => mIsEscapePlaying;
+
         private MyProcedureBattle mBattleProcedure;
 
         private int mSelectedIndex      = 0;
@@ -52,12 +89,13 @@ namespace Monster
 
             if (rootRect != null)
             {
-                rootRect.anchorMin = new Vector2(0.5f, 1f);
-                rootRect.anchorMax = new Vector2(0.5f, 1f);
-                rootRect.pivot = new Vector2(0.5f, 1f);
-                rootRect.anchoredPosition = Vector2.zero;
-                rootRect.sizeDelta = new Vector2(mWidth, mHeight);
-                rootRect.localScale = Vector3.one;
+                // 백그라운드와 같은 너비와 상단 중앙 기준을 사용하여 좌우 끝을 맞춥니다.
+                rootRect.anchorMin          = new Vector2(0.5f, 1f);
+                rootRect.anchorMax          = new Vector2(0.5f, 1f);
+                rootRect.pivot              = new Vector2(0.5f, 1f);
+                rootRect.anchoredPosition   = Vector2.zero;
+                rootRect.sizeDelta          = new Vector2(mWidth, mHeight);
+                rootRect.localScale         = Vector3.one;
             }
             else
             {
@@ -65,8 +103,8 @@ namespace Monster
 
                 if (parentRect != null)
                 {
-                    float centerX = (0.5f - parentRect.pivot.x) * parentRect.rect.width;
-                    float topY = (1f - parentRect.pivot.y) * parentRect.rect.height;
+                    float centerX           = (0.5f - parentRect.pivot.x) * parentRect.rect.width;
+                    float topY              = (1f - parentRect.pivot.y) * parentRect.rect.height;
                     transform.localPosition = new Vector3(centerX, topY, 0f);
                 }
                 else
@@ -94,11 +132,14 @@ namespace Monster
             SetUIRect(mFightMenu, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -810f), new Vector2(1440f, 270f), new Vector2(0f, -810f));
             SetFightMenuVisible(false);
 
-            // 상대 체력바를 왼쪽 상단 영역의 가운데에 배치합니다.
-            SetUIRect(mEnemyStatus1, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 120f), new Vector2(300f, -80f));
+            // 기술 버튼과 이름 라벨 위치 설정
+            InitializeSkillButtons();
 
-            // 아군 체력바를 오른쪽 하단 영역의 가운데에 배치합니다.
-            SetUIRect(mPlayerStatus1, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 120f), new Vector2(-300f, 90f));
+            // 상대 체력바의 왼쪽 끝을 백그라운드의 왼쪽 가장자리에 붙입니다.
+            SetUIRect(mEnemyStatus1, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(400f, 120f), new Vector2(0f, -80f));
+
+            // 아군 체력바는 25% 크게 표시하고 오른쪽 끝을 백그라운드의 오른쪽 가장자리에 붙입니다.
+            SetUIRect(mPlayerStatus1, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), Vector2.zero, new Vector2(500f, 150f), new Vector2(0f, 90f));
 
             SetUIVisible(mEnemyStatus1, true);
             //SetStatusVisible(mEnemyStatus2,     false);
@@ -127,6 +168,9 @@ namespace Monster
             // 하단 버튼의 기본 Sprite와 선택 Sprite를 초기화합니다.
             InitializeButtons();
 
+            // 기본 전투 명령 안내 라벨 초기화
+            InitializeCommandLabel();
+
             // BattleProcedure를 가져옵니다.
             mBattleProcedure = GameEntry.GetComponent<ProcedureComponent>().CurrentProcedure as MyProcedureBattle;
 
@@ -135,6 +179,9 @@ namespace Monster
                 Log.Error("BattleUI : ProcedureComponent가 없습니다.");
             }
 
+            // 전투 시작 안내를 먼저 출력합니다.
+            BeginBattleIntro(userData);
+
             Log.Info("BattleUI : Single Battle UI 활성화 완료");
         }
 
@@ -142,6 +189,22 @@ namespace Monster
         protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
+
+            // 전투 시작 메시지가 우선입니다.
+            if (mIsIntroPlaying == true)
+            {
+                UpdateBattleIntro(realElapseSeconds);
+
+                return;
+            }
+
+            // 도망 메시지를 표시하는 동안에는 명령 메뉴 입력을 처리하지 않습니다.
+            if (mIsEscapePlaying)
+            {
+                UpdateBattleEscape(realElapseSeconds);
+
+                return;
+            }
 
             if (mButtonImages == null)
             {
@@ -161,6 +224,397 @@ namespace Monster
             UpdateCommandMenu();
         }
 
+        // 무엇을 할까? 라벨의 위치와 내용을 설정합니다.
+        private void InitializeCommandLabel()
+        {
+            if (mBottomRoot == null)
+            {
+                Log.Warning("BattleUI : BottomUI가 없습니다.");
+
+                return;
+            }
+
+            if (mCommandLabel == null)
+            {
+                Transform labelTransform = mBottomRoot.Find("CommandLabel");
+
+                if (labelTransform != null)
+                {
+                    mCommandLabel = labelTransform.GetComponent<TMP_Text>();
+                }
+            }
+
+            if (mCommandLabel == null)
+            {
+                Log.Warning("BattleUI : BottomUI/CommandLabel을 찾지 못했습니다.");
+
+                return;
+            }
+
+            SetUIRect(mCommandLabel.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-470f, 0f), new Vector2(420f, 150f), new Vector2(-470f, 0f));
+
+            mCommandLabel.alignment = TextAlignmentOptions.MidlineLeft;
+
+            mCommandLabel.text = "무엇을 할까?";
+        }
+
+        // 기술 버튼 4개와 라벨 위치를 초기화합니다.
+        private void InitializeSkillButtons()
+        {
+            if (mFightMenu == null)
+            {
+                Log.Error("BattleUI : FightMenu가 없습니다.");
+
+                return;
+            }
+
+            // 기술 버튼의 배치 좌표입니다.
+            Vector2[] positions =
+            {
+                new Vector2(-445f, 65f),
+                new Vector2(75f, 65f),
+                new Vector2(-445f, -65f),
+                new Vector2(75f, -65f)
+            };
+
+            // 기술 버튼의 크기입니다.
+            Vector2 buttonSize = new Vector2(490f, 110f);
+
+            // 기술 이름 라벨의 크기입니다.
+            Vector2 labelSize = new Vector2(450f, 90f);
+
+            // 타입 테이블이 반환하는 이름으로 스프라이트를 찾을 수 있게 합니다.
+            mFightCursorByName.Clear();
+            if (mFightCursorSprites != null)
+            {
+                foreach (Sprite sprite in mFightCursorSprites)
+                {
+                    if (sprite != null)
+                    {
+                        mFightCursorByName[sprite.name] = sprite;
+                    }
+                }
+            }
+
+            for (int index = 0; index < positions.Length; index++)
+            {
+                mSkillImages[index] = null;
+                mSkillLabels[index] = null;
+
+                // SkillButton0~3을 이름으로 검색합니다.
+                Transform skillButton = mFightMenu.Find($"SkillButton{index}");
+
+                if (skillButton == null)
+                {
+                    Log.Warning($"BattleUI : SkillButton{index}가 없습니다.");
+
+                    continue;
+                }
+
+                // 기술 버튼 위치 설정
+                SetUIRect(skillButton, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), positions[index], buttonSize, positions[index]);
+
+                // 기술 버튼의 Image 컴포넌트를 확인합니다.
+                Image skillImage = skillButton.GetComponent<Image>();
+                mSkillImages[index] = skillImage;
+
+                if (skillImage == null)
+                {
+                    Log.Warning($"BattleUI : SkillButton{index}에 Image가 없습니다.");
+                }
+                else
+                {
+                    // 원본 Sprite 색상을 유지합니다.
+                    skillImage.color = Color.white;
+
+                }
+
+                // 자식 SkillName 라벨 검색
+                Transform skillName = skillButton.Find("SkillName");
+
+                if (skillName == null)
+                {
+                    Log.Warning($"BattleUI : SkillButton{index}/SkillName이 없습니다.");
+
+                    continue;
+                }
+
+                // 기술 이름 라벨 위치 설정
+                SetUIRect(skillName, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, labelSize, Vector2.zero);
+
+                TMP_Text skillText = skillName.GetComponent<TMP_Text>();
+
+                if (skillText == null)
+                {
+                    Log.Warning($"BattleUI : SkillButton{index}/SkillName에 TMP_Text가 없습니다.");
+
+                    continue;
+                }
+
+                // 텍스트 중앙 정렬 및 크기 설정
+                skillText.alignment = TextAlignmentOptions.Center;
+
+                skillText.enableAutoSizing  = true;
+                skillText.fontSizeMin       = 28f;
+                skillText.fontSizeMax       = 48f;
+
+                skillText.color = Color.black;
+
+                mSkillLabels[index] = skillText;
+            }
+        }
+
+        // 비어 있는 칸을 건너뛰고 첫 번째 기술을 선택합니다.
+        private void ResetFightSelection()
+        {
+            mSelectedSkillIndex = -1;
+            for (int index = 0; index < mSkillImages.Length; index++)
+            {
+                if (GetFightSkill(index) != null)
+                {
+                    mSelectedSkillIndex = index;
+                    break;
+                }
+            }
+
+            RefreshSkillButtons();
+        }
+
+        private PokemonSkillInfo GetFightSkill(int index)
+        {
+            if (mFightSkills == null || index < 0 || index >= mSkillImages.Length || index >= mFightSkills.Count)
+            {
+                return null;
+            }
+
+            return mFightSkills[index];
+        }
+
+        // 기술 이름과 해당 타입의 선택 상태에 맞는 버튼 이미지를 적용합니다.
+        private void RefreshSkillButtons()
+        {
+            for (int index = 0; index < mSkillImages.Length; index++)
+            {
+                Image image = mSkillImages[index];
+                if (image == null)
+                {
+                    continue;
+                }
+
+                PokemonSkillInfo skill = GetFightSkill(index);
+                SetUIVisible(image.transform, skill != null);
+                if (skill == null)
+                {
+                    continue;
+                }
+
+                bool isSelected = index == mSelectedSkillIndex;
+                string spriteName = PokemonTypeCursorTable.GetSpriteName(skill.Type, isSelected);
+                Sprite sprite;
+                if (spriteName == null || !mFightCursorByName.TryGetValue(spriteName, out sprite))
+                {
+                    // 타입 이미지가 없는 경우에는 일반 타입 이미지를 사용합니다.
+                    mFightCursorByName.TryGetValue(PokemonTypeCursorTable.GetSpriteName("Normal", isSelected), out sprite);
+                }
+
+                image.sprite = sprite;
+                if (mSkillLabels[index] != null)
+                {
+                    mSkillLabels[index].text = skill.Name;
+                }
+            }
+        }
+
+        // 포켓몬 정보를 가져와 메시지를 시작합니다.
+        private void BeginBattleIntro(object userData)
+        {
+            mIsIntroPlaying = false;
+            mIntroMessageIndex = 0;
+            mIntroElapsedSeconds = 0f;
+            mIntroPlayerName = null;
+
+            // Inspector 연결이 없으면 오브젝트 이름으로 검색합니다.
+            if (mMessagePanel == null)
+            {
+                mMessagePanel = transform.Find("overlay_message");
+            }
+
+            if (mMessagePanel != null &&
+                mMessageLabel == null)
+            {
+                mMessageLabel = mMessagePanel.GetComponentInChildren<TMP_Text>(true);
+            }
+
+            if (mMessagePanel == null || mMessageLabel == null)
+            {
+                Log.Error("BattleUI : overlay_message 또는 MessageLabel이 없습니다.");
+
+                return;
+            }
+
+            SetUIVisible(mMessagePanel, false);
+
+            // MyProcedureBattle에서 전달한 적 포켓몬 번호
+            if ((userData is int) != true)
+            {
+                Log.Error("BattleUI : 적 포켓몬 ID가 전달되지 않았습니다.");
+
+                return;
+            }
+
+            int enemyPokemonId = (int)userData;
+
+            RPGGame game = RPGGame.Instance;
+
+            if (game == null || game.PokemonDatabase == null || game.PokemonPartyManager == null || game.PokemonPartyManager.Count == 0)
+            {
+                Log.Error("BattleUI : 포켓몬 데이터베이스 또는 파티 정보가 없습니다.");
+
+                return;
+            }
+
+            // 적 포켓몬의 도감 번호로 정보를 조회합니다.
+            PokemonInfo enemyPokemon = game.PokemonDatabase.GetPokemonInfo(enemyPokemonId);
+
+            // 현재 파티 첫 번째 포켓몬을 가져옵니다.
+            PokemonData playerPokemon = game.PokemonPartyManager.GetPokemon(0);
+
+            if (enemyPokemon == null || playerPokemon == null)
+            {
+                Log.Error("BattleUI : 출전 포켓몬 정보를 찾지 못했습니다.");
+
+                return;
+            }
+
+            // 아군 포켓몬 이름을 저장합니다.
+            mIntroPlayerName = playerPokemon.Name;
+
+            mIntroMessageIndex = 0;
+            mIntroElapsedSeconds = 0f;
+            mIsIntroPlaying = true;
+
+            // 포켓몬 이름의 마지막 한글 글자에 받침이 있으면 '이'를 사용합니다.
+            string enemyName = enemyPokemon.Name;
+            string subjectParticle = "가";
+            if (!string.IsNullOrEmpty(enemyName))
+            {
+                char lastCharacter = enemyName[enemyName.Length - 1];
+                if (lastCharacter >= '가' && lastCharacter <= '힣' && (lastCharacter - '가') % 28 != 0)
+                {
+                    subjectParticle = "이";
+                }
+            }
+
+            // 첫 번째 메시지를 출력합니다.
+            ShowBattleMessage($"야생의 {enemyName}{subjectParticle} 출현하였다!");
+
+            Log.Info($"BattleUI : {mMessageLabel.text}");
+        }
+
+        // C키 또는 5초 경과 시 다음 메시지로 이동합니다.
+        private void UpdateBattleIntro(float realElapseSeconds)
+        {
+            if (mIsIntroPlaying != true)
+            {
+                return;
+            }
+
+            mIntroElapsedSeconds += realElapseSeconds;
+
+            bool isConfirmPressed = Input.GetKeyDown(KeyCode.C);
+
+            // C키 입력도 없고 5초도 지나지 않았으면 유지합니다.
+            if (isConfirmPressed != true && mIntroElapsedSeconds < mMessageDuration)
+            {
+                return;
+            }
+
+            mIntroElapsedSeconds = 0f;
+            mIntroMessageIndex++;
+
+            // 두 번째 메시지
+            if (mIntroMessageIndex == 1)
+            {
+                mMessageLabel.text = $"가랏! {mIntroPlayerName}!";
+
+                Log.Info($"BattleUI : 가랏! {mIntroPlayerName}!");
+
+                return;
+            }
+
+            CompleteBattleIntro();
+        }
+
+        // 메시지를 닫고 기존 전투 메뉴로 전환합니다.
+        private void CompleteBattleIntro()
+        {
+            mIsIntroPlaying         = false;
+            mIntroMessageIndex      = 0;
+            mIntroElapsedSeconds    = 0f;
+            mIntroPlayerName        = null;
+
+            // 메시지 UI 숨기기
+            SetUIVisible(mMessagePanel, false);
+
+            // FightMenu를 숨기고 기존 BottomUI 표시
+            SetFightMenuVisible(false);
+
+            Log.Info("BattleUI : 전투 시작 메시지 완료");
+        }
+
+        // <summary>
+        // 명령 메뉴를 숨기고 기존 메시지 창에 대사를 표시합니다.
+        // </summary>
+        private void ShowBattleMessage(string message)
+        {
+            SetFightMenuVisible(false);
+            SetUIVisible(mBottomRoot, false);
+            mMessageLabel.text = message;
+            SetUIVisible(mMessagePanel, true);
+        }
+
+        // <summary>
+        // 도망 명령을 확인하면 성공 메시지를 먼저 표시합니다.
+        // </summary>
+        private void BeginBattleEscape()
+        {
+            if (mBattleProcedure == null)
+            {
+                Log.Warning("BattleUI : MyProcedureBattle을 찾을 수 없습니다.");
+
+                return;
+            }
+
+            // 메시지 창이 없더라도 도망 명령은 처리합니다.
+            if (mMessagePanel == null || mMessageLabel == null)
+            {
+                Log.Warning("BattleUI : 도망 메시지 창을 찾을 수 없습니다.");
+                mBattleProcedure.FinishBattle();
+
+                return;
+            }
+
+            mEscapeElapsedSeconds = 0f;
+            mIsEscapePlaying = true;
+            ShowBattleMessage("무사히 도망쳤다!");
+        }
+
+        // <summary>
+        // C키를 다시 누르거나 5초가 지나면 전투를 종료합니다.
+        // </summary>
+        private void UpdateBattleEscape(float realElapseSeconds)
+        {
+            mEscapeElapsedSeconds += realElapseSeconds;
+
+            if (!Input.GetKeyDown(KeyCode.C) && mEscapeElapsedSeconds < mMessageDuration)
+            {
+                return;
+            }
+
+            // 배틀 화면이 닫히기 전까지 메시지 창을 표시합니다.
+            mBattleProcedure.FinishBattle();
+        }
+
         // FightMenu의 입력을 처리합니다.
         private void UpdateFightMenu()
         {
@@ -172,7 +626,35 @@ namespace Monster
                 return;
             }
 
-            // 기술 선택 방향키와 C키 확정은 이 함수에서 구현합니다.
+            if (mSelectedSkillIndex < 0)
+            {
+                return;
+            }
+
+            // 방향키로 이동할 때 같은 행 또는 같은 열의 기술만 선택합니다.
+            int nextIndex = mSelectedSkillIndex;
+            if (Input.GetKeyDown(KeyCode.LeftArrow) && nextIndex % 2 == 1)
+            {
+                nextIndex--;
+            }
+            else if (Input.GetKeyDown(KeyCode.RightArrow) && nextIndex % 2 == 0)
+            {
+                nextIndex++;
+            }
+            else if (Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                nextIndex -= 2;
+            }
+            else if (Input.GetKeyDown(KeyCode.DownArrow))
+            {
+                nextIndex += 2;
+            }
+
+            if (nextIndex != mSelectedSkillIndex && GetFightSkill(nextIndex) != null)
+            {
+                mSelectedSkillIndex = nextIndex;
+                RefreshSkillButtons();
+            }
         }
 
         // 싸운다, 가방, 포켓몬, 도망의 입력을 처리합니다.
@@ -192,7 +674,6 @@ namespace Monster
                 {
                     SetFightMenuVisible(true);
                 }
-                // 도망 버튼 선택 시 전투 종료 함수를 호출합니다.
                 else if (mSelectedIndex == 1)
                 {
                     ;
@@ -203,15 +684,8 @@ namespace Monster
                 }
                 else if (mSelectedIndex == 3)
                 {
-                    // Procedure 참조가 있을 때만 종료를 요청합니다.
-                    if (mBattleProcedure != null)
-                    {
-                        mBattleProcedure.FinishBattle();
-                    }
-                    else
-                    {
-                        Log.Warning("BattleUI : MyProcedureBattle을 찾을 수 없습니다.");
-                    }
+                    // 도망 버튼을 선택하면 종료 전에 성공 메시지를 표시합니다.
+                    BeginBattleEscape();
                 }
 
                 return;
@@ -282,6 +756,11 @@ namespace Monster
 
             // 현재 FightMenu의 활성화 상태를 저장합니다.
             mIsFightMenuOpen = isVisible;
+
+            if (isVisible)
+            {
+                ResetFightSelection();
+            }
 
             // FightMenu의 활성화 상태를 변경합니다.
             SetUIVisible(mFightMenu, isVisible);
@@ -539,6 +1018,18 @@ namespace Monster
 
         protected internal override void OnClose(bool isShutdown, object userData)
         {
+            // 메시지 상태 초기화
+            mIsIntroPlaying         = false;
+            mIntroMessageIndex      = 0;
+            mIntroElapsedSeconds    = 0f;
+            mIntroPlayerName        = null;
+            mIsEscapePlaying        = false;
+            mEscapeElapsedSeconds   = 0f;
+            SetUIVisible(mMessagePanel, false);
+
+            // 다음 전투에 이전 포켓몬의 이름과 능력치가 남지 않도록 합니다.
+            SetPokemonStatus(null, null);
+
             // 다음 배틀에서 기본 메뉴부터 열리도록 상태를 초기화합니다.
             SetFightMenuVisible(false);
 
@@ -568,9 +1059,100 @@ namespace Monster
             base.OnClose(isShutdown, userData);
         }
 
-        // HP 게이지 Image 연결 전이므로 기존 빈 함수를 유지합니다.
-        public void SetHP(int enemyCurrentHP, int enemyMaxHP, int playerCurrentHP, int playerMaxHP)
+        // <summary>
+        // 전투에 참가한 포켓몬의 실제 데이터를 각 상태창에 표시합니다.
+        // </summary>
+        internal void SetPokemonStatus(PokemonData enemyPokemon, PokemonData playerPokemon)
         {
+            mEnemyStatusView?.SetPokemon(enemyPokemon);
+            mPlayerStatusView?.SetPokemon(playerPokemon);
+
+            IReadOnlyList<PokemonSkillInfo> skills = playerPokemon?.Skills;
+            if (mFightSkills != skills)
+            {
+                mFightSkills = skills;
+                if (mIsFightMenuOpen)
+                {
+                    ResetFightSelection();
+                }
+            }
+        }
+
+        [System.Serializable]
+        private class PokemonStatusView
+        {
+            [SerializeField] private TMP_Text mNameLabel;
+            [SerializeField] private TMP_Text mHPLabel;
+            [SerializeField] private TMP_Text mLevelLabel;
+            [SerializeField] private TMP_Text mActionLabel;
+            [SerializeField] private RectTransform mHPFill;
+
+            private PokemonData mDisplayedPokemon;
+            private int mDisplayedHP;
+            private int mDisplayedMaxHP;
+            private int mDisplayedLevel;
+            private int mDisplayedAction;
+
+            public void SetPokemon(PokemonData pokemon)
+            {
+                if (pokemon == null)
+                {
+                    if (mDisplayedPokemon != null)
+                    {
+                        mDisplayedPokemon = null;
+
+                        SetLabel(mNameLabel,    string.Empty);
+                        SetLabel(mHPLabel,      string.Empty);
+                        SetLabel(mLevelLabel,   string.Empty);
+                        SetHPFill(0);
+                    }
+
+                    return;
+                }
+
+                // 값이 같은 동안에는 텍스트와 게이지를 다시 그리지 않습니다.
+                if (mDisplayedPokemon == pokemon && mDisplayedHP == pokemon.CurrentHP &&
+                    mDisplayedMaxHP == pokemon.MaxHP && mDisplayedLevel == pokemon.Level)
+                {
+                    return;
+                }
+
+                mDisplayedPokemon   = pokemon;
+                mDisplayedHP        = pokemon.CurrentHP;
+                mDisplayedMaxHP     = pokemon.MaxHP;
+                mDisplayedLevel     = pokemon.Level;
+
+                SetLabel(mNameLabel,    pokemon.Name);
+                SetLabel(mHPLabel,      $"{pokemon.CurrentHP}/{pokemon.MaxHP}");
+                SetLabel(mLevelLabel,   $"Lv. {pokemon.Level}");
+
+                // 최대 체력이 0이면 게이지를 비워 둡니다.
+                float hpRatio = 0f;
+
+                if (pokemon.MaxHP > 0)
+                {
+                    hpRatio = (float)pokemon.CurrentHP / pokemon.MaxHP;
+                }
+
+                SetHPFill(hpRatio);
+            }
+
+            private static void SetLabel(TMP_Text label, string text)
+            {
+                if (label != null)
+                {
+                    label.text = text;
+                }
+            }
+
+            // 게이지의 왼쪽을 고정한 상태에서 남은 체력만큼 너비를 채웁니다.
+            private void SetHPFill(float ratio)
+            {
+                if (mHPFill != null)
+                {
+                    mHPFill.anchorMax = new Vector2(Mathf.Clamp01(ratio), 1f);
+                }
+            }
         }
     }
 }

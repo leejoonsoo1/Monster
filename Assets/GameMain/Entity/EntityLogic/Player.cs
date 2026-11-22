@@ -18,11 +18,15 @@ namespace Monster
         public float mSpeed = 9f;
 
         [Header("절벽 점프 설정")]
-        [SerializeField] private float mJumpDuration    = 0.35f;
-        [SerializeField] private float mJumpHeight      = 0.4f;
+        // 점프를 시작해서 착지하기까지 걸리는 시간입니다. 단위는 초입니다.
+        [SerializeField, Min(0.02f)] private float mJumpDuration = 0.35f;
+        // 점프 중 캐릭터 그림이 바닥에서 떠오르는 최대 높이입니다.
+        [SerializeField, Min(0f)] private float mJumpHeight = 0.6f;
 
-        // 캐릭터 그래픽이 들어 있는 자식 오브젝트
+        // Animator와 SpriteRenderer가 들어 있는 자식 오브젝트입니다.
         [SerializeField] private Transform mVisual;
+        // 점프가 끝난 뒤 캐릭터 그림을 되돌릴 위치입니다.
+        private Vector3 mVisualRestPosition;
 
         private Rigidbody2D mRigidbody2D;
         private PlayerData  mPlayerData;
@@ -65,6 +69,24 @@ namespace Monster
             mPlayerData     = userData as PlayerData;
             mAnimator       = GetComponentInChildren<Animator>();
             mRigidbody2D    = GetComponent<Rigidbody2D>();
+
+            // 본체가 연결되어 있으면 카메라와 충돌 범위도 같이 움직이므로 연결을 해제합니다.
+            if (mVisual == transform)
+            {
+                mVisual = null;
+            }
+
+            // Visual이 연결되지 않았다면 Animator가 붙은 자식 오브젝트를 사용합니다.
+            if (mVisual == null && mAnimator != null && mAnimator.transform != transform)
+            {
+                mVisual = mAnimator.transform;
+            }
+
+            // 착지할 때 복원할 수 있도록 캐릭터 그림의 기본 위치를 저장합니다.
+            if (mVisual != null)
+            {
+                mVisualRestPosition = mVisual.localPosition;
+            }
 
             if (mPlayerData == null)
             {
@@ -129,6 +151,18 @@ namespace Monster
 
             // Player 생성 직후에는 Idle 상태로 시작합니다.
             ChangeState(IdleState);
+        }
+
+        // <summary>
+        // Player가 회수될 때 진행 중인 이동을 취소하고 캐릭터 그림의 위치를 복원합니다.
+        // </summary>
+        protected internal override void OnHide(bool isShutdown, object userData)
+        {
+            // 이동 번호를 변경하여 이전 이동 코루틴이 착지 처리를 하지 않도록 합니다.
+            mMoveVersion++;
+            mIsMoving = false;
+            ResetJumpVisual();
+            base.OnHide(isShutdown, userData);
         }
 
         protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
@@ -231,15 +265,19 @@ namespace Monster
             // 입력 방향 바로 앞의 셀을 계산합니다.
             Vector3Int targetCell   = currentCell + moveCell;
 
+            // 목표 셀에 있는 모든 이동 불가 타일 종류를 가져옵니다.
+            List<EBlockedTileType> blockedTileTypes = mTilemapManager.GetBlockedTileTypes(targetCell);
+
             // =========================================
-            // 아래 방향으로 Hill을 만났을 때 점프
+            // 아래 방향으로 이동할 때 앞 칸의 장애물이 Hill뿐이면 점프합니다.
             // =========================================
-            if (mMoveDirection == Vector2.down && mTilemapManager.IsHillTile(targetCell))
+            if (mMoveDirection == Vector2.down &&
+                blockedTileTypes.Count == 1 && blockedTileTypes[0] == EBlockedTileType.Hill)
             {
                 // Hill 타일을 넘어 두 칸 앞에 착지합니다.
-                Vector3Int landingCell = currentCell + moveCell * 2;
+                Vector3Int landingCell = targetCell + moveCell;
 
-                // 착지 지점이 막혀 있으면 점프하지 않습니다.
+                // 착지할 타일이 없거나 장애물이 있으면 이동을 시작하지 않습니다.
                 if (!mTilemapManager.IsWalkable(landingCell))
                 {
                     mIsMoving = false;
@@ -260,9 +298,7 @@ namespace Monster
             // =========================================
             // 기존 일반 이동 불가 검사
             // =========================================
-            List<EBlockedTileType> blockedTIleTypes = mTilemapManager.GetBlockedTileTypes(targetCell);
-
-            if (blockedTIleTypes.Count > 0)
+            if (blockedTileTypes.Count > 0)
             {
                 mIsMoving = false;
 
@@ -277,6 +313,9 @@ namespace Monster
 
             // 새로운 이동을 시작할 때 이동 번호를 증가시킵니다.
             mMoveVersion++;
+
+            // 점프 뒤에 다시 걸을 때 걷기 애니메이션을 재생합니다.
+            SetMoveAnimation(true);
 
             // 이번 이동의 번호를 코루틴으로 전달합니다.
             StartCoroutine(MoveToCell(mTargetPosition, mMoveVersion));
@@ -377,76 +416,90 @@ namespace Monster
                 yield break;
             }
 
-            mRigidbody2D.position = targetPosition;
-
-            // 한 칸 이동이 끝날 때마다 현재 Tilemap 목록을 갱신합니다.
-            if (mTilemapManager != null)
-            {
-                mTilemapManager.RefreshTilemaps();
-            }
-
-            // 한 칸 이동을 완전히 끝낸 후
-            // 현재 위치에서 수풀을 밟은 횟수를 검사합니다.
-            CheckEncounter();
-
-            mIsMoving = false;
+            CompleteTileMove(targetPosition);
         }
 
+        // <summary>
+        // 본체를 착지 셀까지 이동시키고 캐릭터 그림을 포물선 궤적으로 움직입니다.
+        // </summary>
         private IEnumerator JumpToCell(Vector2 landingPosition, int moveVersion)
         {
+            // 착지할 때까지 새로운 이동이 시작되지 않도록 합니다.
             mIsMoving = true;
 
             Vector2 startPosition = mRigidbody2D.position;
-            Vector3 originalVisualPosition = mVisual != null ? mVisual.localPosition : Vector3.zero;
 
+            // 점프 시간은 최소 한 번의 물리 갱신만큼 확보합니다.
+            float duration = Mathf.Max(mJumpDuration, Time.fixedDeltaTime);
             float elapsedTime = 0f;
+            WaitForFixedUpdate waitForPhysics = new WaitForFixedUpdate();
 
-            // 점프 중에는 걷기 애니메이션을 끕니다.
+            // 걷기 애니메이션을 멈추고 아래를 바라보는 대기 자세로 바로 전환합니다.
+            SetDirectionAnimation(Vector2.down);
             SetMoveAnimation(false);
-
-            while (elapsedTime < mJumpDuration)
+            if (mAnimator != null)
             {
+                mAnimator.Play("Base Layer.Idle", 0, 0f);
+            }
+
+            // 부모의 배율과 관계없이 설정한 높이만큼 올라가도록 로컬 좌표로 변환합니다.
+            Vector3 localJumpHeight = Vector3.zero;
+            if (mVisual != null)
+            {
+                localJumpHeight = mVisual.parent.InverseTransformVector(Vector3.up * mJumpHeight);
+            }
+
+            while (elapsedTime < duration)
+            {
+                // 진행률에 맞춰 본체를 착지 지점으로 이동시키고 물리 갱신을 기다립니다.
+                elapsedTime += Time.fixedDeltaTime;
+                float progress = Mathf.Clamp01(elapsedTime / duration);
+                mRigidbody2D.MovePosition(Vector2.Lerp(startPosition, landingPosition, progress));
+                yield return waitForPhysics;
+
                 if (moveVersion != mMoveVersion)
                 {
-                    if (mVisual != null)
-                    {
-                        mVisual.localPosition = originalVisualPosition;
-                    }
-
+                    // 이동이 취소된 경우 높이 보정만 되돌리고 착지 처리는 건너뜁니다.
+                    ResetJumpVisual();
                     yield break;
                 }
 
-                elapsedTime     += Time.deltaTime;
-
-                float progress  = Mathf.Clamp01(elapsedTime / mJumpDuration);
-
-                // Player 본체는 착지 지점까지 직선으로 이동합니다.
-                Vector2 groundPosition = Vector2.Lerp(startPosition, landingPosition, progress);
-
-                mRigidbody2D.MovePosition(groundPosition);
-
-                // 캐릭터 그래픽만 위로 올라갔다 내려옵니다.
                 if (mVisual != null)
                 {
-                    float jumOffset = 4f * mJumpHeight * progress * (1f - progress);
-
-                    mVisual.localPosition = originalVisualPosition + Vector3.up * jumOffset;
+                    // 점프의 중간에서 가장 높이 올라가고 착지할 때 기본 높이로 돌아옵니다.
+                    float arc = 4f * progress * (1f - progress);
+                    mVisual.localPosition = mVisualRestPosition + localJumpHeight * arc;
                 }
-
-                yield return null;
             }
 
-            // 착지 지점의 정확한 중앙에 고정합니다.
-            mRigidbody2D.position = landingPosition;
+            // 캐릭터 그림을 원래 높이로 돌린 뒤 도착한 셀을 처리합니다.
+            ResetJumpVisual();
+            CompleteTileMove(landingPosition);
+        }
 
+        // <summary>
+        // 점프로 이동한 캐릭터 그림을 저장해 둔 위치로 되돌립니다.
+        // </summary>
+        private void ResetJumpVisual()
+        {
             if (mVisual != null)
             {
-                mVisual.localPosition = originalVisualPosition;
+                mVisual.localPosition = mVisualRestPosition;
             }
+        }
 
-            // 점프로 수풀에 착지한 경우에도 한 번 밟은 것으로 셉니다.
+        // <summary>
+        // 걷기와 점프가 끝나면 도착한 셀을 한 번만 처리합니다.
+        // </summary>
+        private void CompleteTileMove(Vector2 targetPosition)
+        {
+            // Rigidbody와 Transform을 셀 중앙에 맞춰 배틀 전환 시에도 도착 위치를 저장할 수 있게 합니다.
+            mRigidbody2D.position = targetPosition;
+            transform.position = new Vector3(targetPosition.x, targetPosition.y, transform.position.z);
+
+            // 현재 타일맵을 갱신하고 도착한 셀에서 수풀 인카운터를 확인합니다.
+            mTilemapManager?.RefreshTilemaps();
             CheckEncounter();
-
             mIsMoving = false;
         }
     }

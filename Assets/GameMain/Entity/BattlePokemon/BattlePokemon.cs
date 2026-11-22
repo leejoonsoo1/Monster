@@ -7,6 +7,7 @@ namespace Monster
     public class BattlePokemon : EntityLogic
     {
         private SpriteRenderer mSpriteRenderer;
+        private Animator mSpriteAnimator;
         private Sprite mDefaultSprite;
 
         public BattlePokemonData PokemonData { get; private set; }
@@ -19,6 +20,7 @@ namespace Monster
             if (mSpriteRenderer != null)
             {
                 mDefaultSprite = mSpriteRenderer.sprite;
+                mSpriteAnimator = mSpriteRenderer.GetComponent<Animator>();
             }
         }
 
@@ -43,10 +45,21 @@ namespace Monster
                 return;
             }
 
-            // 풀에서 재사용할 때도 현재 데이터 또는 프리팹의 원래 Sprite를 적용합니다.
-            mSpriteRenderer.sprite = PokemonData.PokemonSprite != null
-                ? PokemonData.PokemonSprite
-                : mDefaultSprite;
+            // 직접 지정한 Sprite가 있으면 애니메이션이 덮어쓰지 않도록 합니다.
+            Sprite overrideSprite = PokemonData.PokemonSprite;
+            if (mSpriteAnimator != null)
+            {
+                mSpriteAnimator.enabled = overrideSprite == null;
+            }
+
+            if (overrideSprite != null)
+            {
+                mSpriteRenderer.sprite = overrideSprite;
+            }
+            else
+            {
+                mSpriteRenderer.sprite = mDefaultSprite;
+            }
             mSpriteRenderer.enabled = true;
         }
 

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Monster
 {
     // 포켓몬의 속성(타입)을 정의합니다.
@@ -52,6 +54,9 @@ namespace Monster
         public int SpDefense    { get; private set; }
         public int Speed        { get; private set; }
 
+        // 현재 포켓몬이 사용할 수 있는 기술을 JSON에 등록된 순서로 보관합니다.
+        public IReadOnlyList<PokemonSkillInfo> Skills { get; private set; }
+
         // 포켓몬 기본 데이터를 초기화합니다.
         public PokemonData(PokemonInfo pokemonInfo)
         {
@@ -95,6 +100,36 @@ namespace Monster
             SpAttack    = pokemonInfo.SpAttack;
             SpDefense   = pokemonInfo.SpDefense;
             Speed       = pokemonInfo.Speed;
+            Skills      = pokemonInfo.Skills ?? System.Array.Empty<PokemonSkillInfo>();
+
+            // JSON 원본 기술과 PP를 개체별로 복사합니다.
+            PokemonSkillInfo[] originalSkills = pokemonInfo.Skills ?? System.Array.Empty<PokemonSkillInfo>();
+
+            PokemonSkillInfo[] ownedSkills = new PokemonSkillInfo[originalSkills.Length];
+
+            for (int index = 0; index < originalSkills.Length; index++)
+            {
+                PokemonSkillInfo skill = originalSkills[index];
+
+                if (skill == null)
+                {
+                    continue;
+                }
+
+                ownedSkills[index] = new PokemonSkillInfo
+                {
+                    Name        = skill.Name,
+                    Type        = skill.Type,
+                    Category    = skill.Category,
+                    Power       = skill.Power,
+                    Accuracy    = skill.Accuracy,
+                    MaxPP       = skill.MaxPP,
+                    CurrentPP   = skill.CurrentPP,
+                    Priority    = skill.Priority
+                };
+            }
+
+            Skills = ownedSkills;
         }
 
         // 포켓몬의 현재 체력을 변경합니다.

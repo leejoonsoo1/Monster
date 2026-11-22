@@ -26,7 +26,7 @@ namespace Monster
             Tree2,
             Building1,
             Building2,
-            LgihtHouse1,
+            Lighthouse1,
             Tree4,
             Door
         }
@@ -121,48 +121,42 @@ namespace Monster
         }
 
         // <summary>
-        // 전달받은 모든 타일맵 종류를 검사하여
-        // 해당 칸으로 이동할 수 있는지 반환합니다.
+        // 이동 불가 타일이 하나라도 있으면 해당 셀로 이동할 수 없습니다.
         // </summary>
         public bool IsWalkable(List<EBlockedTileType> blockedTileTypes)
         {
-            if (blockedTileTypes == null)
-            {
-                return true;
-            }
-
-            // 등록된 이동 가능한 타일맵을 검사합니다.
-            foreach (EBlockedTileType blockedTileType in blockedTileTypes)
-            {
-                switch (blockedTileType)
-                {
-                    case EBlockedTileType.Hill:
-                        return false;
-                    case EBlockedTileType.Props:
-                        return false;
-                    case EBlockedTileType.Tree1:
-                        return false;
-                    case EBlockedTileType.Tree2:
-                        return false;
-                    case EBlockedTileType.Building1:
-                        return false;
-                    case EBlockedTileType.LgihtHouse1:
-                        return false;
-                }
-            }
-
-            // 어떤 이동 가능 타일맵에도 타일이 없으면 이동할 수 없습니다.
-            return true;
+            return blockedTileTypes == null || blockedTileTypes.Count == 0;
         }
 
         // <summary>
-        // 목표 셀에 이동할 수 있는지 바로 확인합니다.
+        // 목표 셀에 장애물이 없고 실제로 디딜 타일이 있는지 확인합니다.
         // </summary>
         public bool IsWalkable(Vector3Int cellPosition)
         {
-            List<EBlockedTileType> blockedTileTypes = GetBlockedTileTypes(cellPosition);
+            // 타일맵이 준비되지 않았거나 도착할 셀에 장애물이 있으면 착지할 수 없습니다.
+            if (mTilemaps == null || !IsWalkable(GetBlockedTileTypes(cellPosition)))
+            {
+                return false;
+            }
 
-            return IsWalkable(blockedTileTypes);
+            foreach (Tilemap tilemap in mTilemaps)
+            {
+                // 해당 셀에 타일이 없는 타일맵은 건너뜁니다.
+                if (tilemap == null || !tilemap.HasTile(cellPosition))
+                {
+                    continue;
+                }
+
+                // 이동 가능한 타일과 현재 맵의 수풀 레이어인 Grace를 착지할 수 있는 곳으로 봅니다.
+                string layerName = tilemap.gameObject.name;
+                if (Enum.TryParse(layerName, true, out EWalkableTileType _) ||
+                    string.Equals(layerName, "Grace", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // 지정한 셀에 Hill 타일이 있는지 확인합니다.

@@ -73,6 +73,7 @@ namespace Monster
             }
 
             mEnemyPokemonId = enemyPokemonId;
+
             SpawnBattlePokemon();
         }
 
@@ -112,6 +113,7 @@ namespace Monster
             }
 
             PokemonInfo enemyInfo = database.GetPokemonInfo(mEnemyPokemonId);
+
             if (enemyInfo == null)
             {
                 Log.Error($"BattlePokemonSpawner : JSON에서 상대 포켓몬 {mEnemyPokemonId} 정보를 찾을 수 없습니다.");

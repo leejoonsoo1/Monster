@@ -143,10 +143,14 @@ namespace Monster
             mSceneComponent.LoadScene(mBattleSceneAssetName);
         }
 
+        /// <summary>
+        /// 배틀 중 포켓몬 소환과 적 체력 갱신을 처리하고, 종료 요청이 있으면 필드로 복귀합니다.
+        /// </summary>
         protected override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
 
+            // Battle Scene이 준비되기 전에는 입력과 배틀 진행을 처리하지 않습니다.
             if (mSceneLoaded != true)
             {
                 return;
@@ -156,6 +160,13 @@ namespace Monster
             {
                 // JSON 로딩과 초기 파티 생성이 늦어져도 준비된 프레임에 소환합니다.
                 TrySpawnBattlePokemon();
+
+                UpdateBattlePokemon();
+            }
+
+            // 적 처치나 도망 등으로 종료 요청이 설정되기 전에는 현재 배틀을 유지합니다.
+            if (mBattleFinished != true)
+            {
                 return;
             }
 
@@ -163,6 +174,71 @@ namespace Monster
 
             // Main 초기화 시 저장한 필드 위치와 방향을 복원합니다.
             ChangeState<MyProcedureMain>(procedureOwner);
+        }
+
+        // <summary>
+        // 소환된 엔티티에서 전투 데이터를 가져오고, 피해 처리 뒤에 상태창을 갱신합니다.
+        // </summary>
+        private void UpdateBattlePokemon()
+        {
+            if (mPokemonSpawner == null)
+            {
+                return;
+            }
+
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+            int enemyEntityId = mPokemonSpawner.EnemyEntityId;
+            PokemonData enemyStats = GetBattlePokemonStats(entityComponent, enemyEntityId);
+
+            BattleUI battleUI = mUIComponent.GetUIForm(mBattleUISerialId)?.Logic as BattleUI;
+            // 도망 메시지가 표시되는 동안에는 D키 테스트로 배틀이 먼저 종료되지 않게 합니다.
+            if (enemyStats != null && (battleUI == null || !battleUI.IsEscapePlaying))
+            {
+                UpdateEnemyPokemon(entityComponent, enemyEntityId, enemyStats, Input.GetKeyDown(KeyCode.D));
+            }
+
+            // UI와 엔티티의 로딩 순서에 관계없이 준비된 포켓몬부터 표시합니다.
+            if (battleUI != null)
+            {
+                PokemonData playerStats = GetBattlePokemonStats(entityComponent, mPokemonSpawner.PlayerEntityId);
+                battleUI.SetPokemonStatus(enemyStats, playerStats);
+            }
+        }
+
+        // 스포너가 발급한 Entity ID로 현재 전투 중인 포켓몬의 능력치를 찾습니다.
+        private static PokemonData GetBattlePokemonStats(EntityComponent entityComponent, int entityId)
+        {
+            if (entityComponent == null || entityId == 0)
+            {
+                return null;
+            }
+
+            BattlePokemon pokemon = entityComponent.GetEntity(entityId)?.Logic as BattlePokemon;
+            return pokemon?.PokemonData?.Stats;
+        }
+
+        // D키로 적의 체력을 5 줄이고, 체력이 0이면 기존 배틀 종료 흐름을 실행합니다.
+        private void UpdateEnemyPokemon(EntityComponent entityComponent, int enemyEntityId, PokemonData enemyStats, bool damageEnemy)
+        {
+            if (damageEnemy)
+            {
+                // 적 포켓몬 체력 5 감소. SetHP에서 0 미만이 되지 않도록 제한합니다.
+                enemyStats.SetHP(enemyStats.CurrentHP - 5);
+
+                Log.Info($"{enemyStats.Name} HP : {enemyStats.CurrentHP}/{enemyStats.MaxHP}");
+            }
+
+            // 적 체력이 0 이하면 숨긴 뒤 기존 종료 흐름으로 필드 위치를 복원합니다.
+            if (enemyStats.CurrentHP <= 0)
+            {
+                Log.Info($"{enemyStats.Name} 쓰러짐");
+
+                // 적을 먼저 회수하고 종료를 요청합니다.
+                // 이후 OnUpdate의 Main 전환과 OnLeave의 UI/Entity 정리가 이어집니다.
+                entityComponent.HideEntity(enemyEntityId);
+
+                FinishBattle();
+            }
         }
 
         protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
@@ -361,14 +437,18 @@ namespace Monster
                 $"SerialId = {mBattleBackgroundSerialId}");
 
             // background보다 위에 표시되도록 Priority를 1로 설정합니다.
-            mBattleUISerialId = mUIComponent.OpenUIForm(mBattleUIAssetName, mBattleUIGroupName, 0, false, null);
+            mBattleUISerialId = mUIComponent.OpenUIForm(mBattleUIAssetName, mBattleUIGroupName, 0, false, mEnemyPokemonId);
 
             Log.Info($"Battle UI Open : {mBattleUIAssetName}," +
                 $"SerialId = {mBattleUISerialId}");
         }
 
+        /// <summary>
+        /// JSON 로딩과 파티 구성이 완료되면 전투 포켓몬 생성을 한 번만 요청합니다.
+        /// </summary>
         private void TrySpawnBattlePokemon()
         {
+            // 종료됐거나 이미 요청했다면 중복 소환하지 않습니다. 필요한 객체도 확인합니다.
             if (mBattleFinished || mPokemonSpawnRequested || mPokemonSpawner == null || RPGGame.Instance == null)
             {
                 return;
@@ -378,9 +458,11 @@ namespace Monster
             PokemonPartyManager party = RPGGame.Instance.PokemonPartyManager;
             if (database == null || !database.mIsLoaded || party == null || party.Count == 0)
             {
+                // 아직 준비 중이면 반환하고, OnUpdate에서 다음 프레임에 재확인합니다.
                 return;
             }
 
+            // 실제 소환 호출 전에 표시하여 반복 갱신에서도 한 번만 요청되게 합니다.
             mPokemonSpawnRequested = true;
             mPokemonSpawner.SpawnBattlePokemon(mEnemyPokemonId);
             Log.Info($"MyProcedureBattle : 전투 포켓몬 생성 요청 완료, EnemyPokemonId = {mEnemyPokemonId}");
@@ -474,9 +556,10 @@ namespace Monster
                 $"Error = {ne.ErrorMessage}");
         }
 
-        // <summary>
-        // Battle 종료를 요청합니다.
-        // </summary>
+        /// <summary>
+        /// 배틀 종료 플래그를 설정합니다. 실제 Main 전환은 OnUpdate에서 처리합니다.
+        /// 여러 곳에서 종료를 요청하더라도 최초 요청만 처리합니다.
+        /// </summary>
         public void FinishBattle()
         {
             if (mBattleFinished)
