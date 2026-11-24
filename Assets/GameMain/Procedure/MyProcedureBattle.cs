@@ -16,10 +16,7 @@ namespace Monster
 
         private const string mBattleBackgroundUIGroupName = "BattleBackground";
 
-
-
         // Battle에서 항상 사용하는 하단 공통 UI Form입니다.
-
         private EventComponent mEventComponent;
         private SceneComponent mSceneComponent;
 
@@ -49,9 +46,9 @@ namespace Monster
             Log.Info("MyProcedureBattle : Enter");
 
             // Battle Procedure의 상태를 초기화합니다.
-            mSceneLoaded    = false;
-            mBattleFinished = false;
-            mPokemonSpawnRequested = false;
+            mSceneLoaded            = false;
+            mBattleFinished         = false;
+            mPokemonSpawnRequested  = false;
 
             // 현재 열려 있는 Battle Background UI의 SerialId를 초기화합니다
             mBattleBackgroundSerialId   = 0;
@@ -187,10 +184,13 @@ namespace Monster
             }
 
             EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
-            int enemyEntityId = mPokemonSpawner.EnemyEntityId;
-            PokemonData enemyStats = GetBattlePokemonStats(entityComponent, enemyEntityId);
+            int enemyEntityId               = mPokemonSpawner.EnemyEntityId;
 
-            BattleUI battleUI = mUIComponent.GetUIForm(mBattleUISerialId)?.Logic as BattleUI;
+            PokemonData enemyStats          = GetBattlePokemonStats(entityComponent, enemyEntityId);
+            PokemonData playerStats         = GetBattlePokemonStats(entityComponent, mPokemonSpawner.PlayerEntityId);
+
+            BattleUI battleUI               = mUIComponent.GetUIForm(mBattleUISerialId)?.Logic as BattleUI;
+
             // 도망 메시지가 표시되는 동안에는 D키 테스트로 배틀이 먼저 종료되지 않게 합니다.
             if (enemyStats != null && (battleUI == null || !battleUI.IsEscapePlaying))
             {
@@ -200,8 +200,48 @@ namespace Monster
             // UI와 엔티티의 로딩 순서에 관계없이 준비된 포켓몬부터 표시합니다.
             if (battleUI != null)
             {
-                PokemonData playerStats = GetBattlePokemonStats(entityComponent, mPokemonSpawner.PlayerEntityId);
                 battleUI.SetPokemonStatus(enemyStats, playerStats);
+            }
+
+            if (Input.GetKeyDown(KeyCode.T) == true)
+            {
+                PokemonData firstAttacker = DetermineFirstAttacker(playerStats, enemyStats);
+
+                if (firstAttacker != null)
+                {
+                    Log.Info($"선공 포켓몬 : {firstAttacker.Name}");
+                }
+            }
+        }
+
+        // 선공 포켓몬을 결정합니다.
+        private PokemonData DetermineFirstAttacker(PokemonData playerStats, PokemonData enemyStats)
+        {
+            if (playerStats == null || enemyStats == null)
+            {
+                return null;
+            }
+
+            // 스피드가 높은 포켓몬이 선공합니다.
+            if (playerStats.Speed > enemyStats.Speed)
+            {
+                return playerStats;
+            }
+            else if (playerStats.Speed < enemyStats.Speed)
+            {
+                return enemyStats;
+            }
+            else
+            {
+                // 스피드가 같으면 무작위로 선공을 결정합니다.
+                if (Random.Range(0, 2) == 0)
+                {
+                    return playerStats;
+                }
+                else
+                {
+                    return enemyStats;
+                }
             }
         }
 
@@ -214,7 +254,18 @@ namespace Monster
             }
 
             BattlePokemon pokemon = entityComponent.GetEntity(entityId)?.Logic as BattlePokemon;
-            return pokemon?.PokemonData?.Stats;
+
+            if (pokemon == null)
+            {
+                return null;
+            }
+
+            if (pokemon.PokemonData == null)
+            {
+                return null;
+            }
+
+            return pokemon.PokemonData.Stats;
         }
 
         // D키로 적의 체력을 5 줄이고, 체력이 0이면 기존 배틀 종료 흐름을 실행합니다.
@@ -249,6 +300,7 @@ namespace Monster
             if (mPokemonSpawner != null)
             {
                 mPokemonSpawner.DespawnBattlePokemon();
+
                 mPokemonSpawner = null;
             }
 
@@ -290,25 +342,19 @@ namespace Monster
             if (isShutdown != true && mUIComponent != null)
             {
                 // 로딩 중인 UI도 취소하여 복귀 후 배틀 UI가 나타나지 않게 합니다.
-                if (mBattleUISerialId > 0 &&
-                    (mUIComponent.HasUIForm(mBattleUISerialId) ||
-                     mUIComponent.IsLoadingUIForm(mBattleUISerialId)))
+                if (mBattleUISerialId > 0 && (mUIComponent.HasUIForm(mBattleUISerialId) || mUIComponent.IsLoadingUIForm(mBattleUISerialId)))
                 {
                     // 배경 SerialId가 아닌 BattleUI SerialId를 사용합니다.
                     mUIComponent.CloseUIForm(mBattleUISerialId);
                 }
 
-                if (mBattleBackgroundSerialId > 0 &&
-                    (mUIComponent.HasUIForm(mBattleBackgroundSerialId) ||
-                     mUIComponent.IsLoadingUIForm(mBattleBackgroundSerialId)))
+                if (mBattleBackgroundSerialId > 0 && (mUIComponent.HasUIForm(mBattleBackgroundSerialId) || mUIComponent.IsLoadingUIForm(mBattleBackgroundSerialId)))
                 {
                     mUIComponent.CloseUIForm(mBattleBackgroundSerialId);
                 }
             }
 
-            if (isShutdown != true && 
-                mSceneComponent != null && 
-                mSceneComponent.SceneIsLoaded(mBattleSceneAssetName) == true)
+            if (isShutdown != true && mSceneComponent != null && mSceneComponent.SceneIsLoaded(mBattleSceneAssetName) == true)
             {
                 Log.Info("Battle Scene Unload");
 

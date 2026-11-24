@@ -100,10 +100,27 @@ namespace Monster
             SpAttack    = pokemonInfo.SpAttack;
             SpDefense   = pokemonInfo.SpDefense;
             Speed       = pokemonInfo.Speed;
-            Skills      = pokemonInfo.Skills ?? System.Array.Empty<PokemonSkillInfo>();
+
+            if (pokemonInfo.Skills != null)
+            {
+                Skills = pokemonInfo.Skills;
+            }
+            else
+            {
+                Skills = System.Array.Empty<PokemonSkillInfo>();
+            }
 
             // JSON 원본 기술과 PP를 개체별로 복사합니다.
-            PokemonSkillInfo[] originalSkills = pokemonInfo.Skills ?? System.Array.Empty<PokemonSkillInfo>();
+            PokemonSkillInfo[] originalSkills;
+
+            if (pokemonInfo.Skills == null)
+            {
+                originalSkills = System.Array.Empty<PokemonSkillInfo>();
+            }
+            else
+            {
+                originalSkills = pokemonInfo.Skills;
+            }
 
             PokemonSkillInfo[] ownedSkills = new PokemonSkillInfo[originalSkills.Length];
 

@@ -119,8 +119,7 @@ namespace Monster
             //    }
             //}
 
-            if (mGame != null &&
-                mGame.IsBattleRequested)
+            if (mGame != null && mGame.IsBattleRequested)
             {
                 mGame.ClearBattleRequest();
 

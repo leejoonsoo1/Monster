@@ -43,6 +43,4 @@ namespace Monster
             InitialState = initialState;
         }
     }
-
-
 }
